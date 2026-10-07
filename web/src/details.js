@@ -22,7 +22,7 @@ function segIntersect(a, b, c, d) {
 
 export function buildBridges() {
   const g = new THREE.Group(); g.name = 'bridges';
-  const skip = [[0, 76], [163, -126.5]]; // 沁芳桥, 沁芳闸 already built
+  const skip = [[0, 76], [163, -126.5], [-102, -74]]; // 沁芳桥, 沁芳闸, 蓼汀花溆 港洞 already built
   const done = [];
   for (const path of L.paths) for (let i = 0; i < path.length - 1; i++) {
     for (const s of L.water.streams) for (let k = 0; k < s.pts.length - 1; k++) {

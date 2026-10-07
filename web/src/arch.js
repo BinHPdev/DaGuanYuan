@@ -44,6 +44,9 @@ export const MAT = {
   paving: std({ map: T.pavingTexture(), roughness: 0.95 }),
   pebble: std({ map: T.pebbleTexture(), roughness: 0.95 }),
   ridgeDark: std({ color: '#33373b', roughness: 0.6 }),
+  latticePlain: std({ map: T.latticeTexture('#6b4a32', '#efe6cf'), side: THREE.DoubleSide }),
+  doorPlain: std({ map: T.doorTexture('#6b4a32', '#efe6cf'), side: THREE.DoubleSide }),
+  hangLatticePlain: std({ map: T.hangingLatticeTexture('#6b4a32'), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide }),
   lantern: std({ color: '#c0281e', emissive: '#ff3a1a', emissiveIntensity: 0.0, roughness: 0.5 }),
   lanternGold: std({ color: '#c9a04a', metalness: 0.5, roughness: 0.4 }),
 };
@@ -298,7 +301,7 @@ export function hall({
   colMat = MAT.column, beamMat = MAT.beamRich, latticeMat = MAT.lattice, wallMat = MAT.wall,
   platform = 0.6, platMat = MAT.stone, frontOpen = false, backWall = true, sideWalls = true,
   corridor = 0, roofH, plaque, plaqueOpts, couplet, dougong = false, lanterns = 'red', steps = true,
-  doorMat, hangMat = MAT.hangLattice, sillMat = MAT.kanqiang, rustic = false,
+  doorMat, hangMat = MAT.hangLattice, sillMat = MAT.kanqiang, rustic = false, unpainted = false, openCenter = false,
 } = {}) {
   const g = new THREE.Group();
   const W = w + corridor * 2, D = d + corridor * 2;
@@ -325,11 +328,11 @@ export function hall({
   const bm = rustic ? MAT.beamPlain : beamMat;
   for (const z of [-D / 2, D / 2]) {
     g.add(at(box(W, bh, 0.3, bm), 0, beamY, z));
-    if (db) { g.add(at(box(W, db, 0.22, MAT.dianban), 0, top - pb - db / 2, z)); g.add(at(box(W + 0.1, pb, 0.36, MAT.dougong), 0, top - pb / 2, z)); }
+    if (db) { g.add(at(box(W, db, 0.22, unpainted ? MAT.wood : MAT.dianban), 0, top - pb - db / 2, z)); g.add(at(box(W + 0.1, pb, 0.36, unpainted ? MAT.beamPlain : MAT.dougong), 0, top - pb / 2, z)); }
   }
   for (const x of [-W / 2, W / 2]) {
     g.add(at(box(0.3, bh, D, bm), x, beamY, 0));
-    if (db) { g.add(at(box(0.22, db, D, MAT.dianban), x, top - pb - db / 2, 0)); g.add(at(box(0.36, pb, D + 0.1, MAT.dougong), x, top - pb / 2, 0)); }
+    if (db) { g.add(at(box(0.22, db, D, unpainted ? MAT.wood : MAT.dianban), x, top - pb - db / 2, 0)); g.add(at(box(0.36, pb, D + 0.1, unpainted ? MAT.beamPlain : MAT.dougong), x, top - pb / 2, 0)); }
   }
   // 斗拱 row along the four sides
   let dgH = 0;
@@ -347,7 +350,7 @@ export function hall({
   // 雀替 at front column heads
   if (!rustic) for (const x of xs) for (const sx of [-1, 1]) {
     if ((sx < 0 && x <= -W / 2 + 0.01) || (sx > 0 && x >= W / 2 - 0.01)) continue;
-    const q = new THREE.Mesh(queTiGeo, MAT.gold);
+    const q = new THREE.Mesh(queTiGeo, unpainted ? MAT.wood : MAT.gold);
     q.position.set(x + sx * colR * 0.8, beamY - bh / 2, D / 2); q.scale.x = sx * Math.min(1, bw / 3.2);
     g.add(q);
   }
@@ -360,7 +363,7 @@ export function hall({
     const cx = -w / 2 + (i + 0.5) * bw, pw = bw - colR * 2;
     if (!frontOpen) {
       const center = i === Math.floor(bays / 2);
-      if (center || rustic) {
+      if (center && openCenter) { /* passage */ } else if (center || rustic) {
         g.add(at(new THREE.Mesh(new THREE.PlaneGeometry(pw, wh), center ? dm : latticeMat), cx, y0 + wh / 2, d / 2 - 0.05));
       } else {
         // 槛墙 + 槛窗

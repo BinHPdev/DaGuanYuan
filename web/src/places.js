@@ -79,12 +79,14 @@ function wineFlag(text) {
 const B = {};
 
 B.zhengmen = (p, g) => {
-  // 正门五间, 筒瓦泥鳅脊 (rounded ridge -> 卷棚), 并无朱粉涂饰, 白石台矶.
+  // 正门五间，上面筒瓦泥鳅脊（卷棚），门栏窗槅皆是细雕新鲜花样，并无朱粉涂饰，一色水磨群墙，下面白石台矶，凿成西番草花样。
   const gate = A.hall({ w: 17, d: 6.5, h: 4.2, bays: 5, roofType: 'juanpeng', roofH: 2.3, colMat: MAT.columnPlain, beamMat: MAT.beamPlain,
-    latticeMat: MAT.lattice, platMat: MAT.marble, platform: 0.9, plaque: p.plaque, frontOpen: false, backWall: false, sideWalls: true });
-  // open the central bay as the passage
-  gate.children = gate.children.filter((c) => !(c.geometry?.type === 'PlaneGeometry' && Math.abs(c.position.x) < 1 && c.material === MAT.lattice));
+    latticeMat: MAT.latticePlain, doorMat: MAT.doorPlain, hangMat: MAT.hangLatticePlain, sillMat: MAT.brick, unpainted: true, openCenter: true,
+    lanterns: false, platMat: MAT.marble, platform: 0.9, plaque: p.plaque, frontOpen: false, backWall: false, sideWalls: true });
   g.add(gate);
+  // 西番草 carving band on the white-stone base
+  const band = new THREE.Mesh(new THREE.BoxGeometry(18.3, 0.28, 7.8), new THREE.MeshStandardMaterial({ map: T.richBeamTexture(), color: '#e9e4d6' }));
+  band.position.y = 0.55; g.add(band);
   addProp(p, 'shishi', -5, 6.2, 2.4, 0);
   addProp(p, 'shishi', 5, 6.2, 2.4, 0);
   label(p, 12);
@@ -99,20 +101,41 @@ B.cuizhang = (p, g) => {
 };
 
 B.qinfangting = (p, g) => {
-  // 白石为栏，环抱池沿，石桥三港 — a three-span flat stone bridge carrying the pavilion.
-  const deckY = 1.6, len = 26, w = 6;
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(w, 0.5, len), MAT.stone);
-  deck.position.y = deckY; g.add(deck);
-  for (const z of [-len / 2 + 3, -4.5, 4.5, len / 2 - 3]) {
-    const pier = new THREE.Mesh(new THREE.BoxGeometry(w, 3.6, 1.6), MAT.stone);
-    pier.position.set(0, deckY - 2, z); g.add(pier);
+  // 俯而视之，则清溪泻雪，石磴穿云，白石为栏，环抱池沿，石桥三港，兽面衔吐。桥上有亭。
+  // Three arched water passages (三港) through a white-stone bridge running N–S over the E–W stream.
+  const deckY = 1.7, len = 26, w = 6;
+  const s2 = new THREE.Shape();
+  s2.moveTo(-len / 2, -1.8); s2.lineTo(len / 2, -1.8); s2.lineTo(len / 2, deckY); s2.lineTo(-len / 2, deckY); s2.closePath();
+  for (const zc of [-7, 0, 7]) {
+    const r = zc === 0 ? 2.6 : 2.1, h = new THREE.Path();
+    h.moveTo(zc - r, -1.7); h.lineTo(zc - r, -0.6); h.absarc(zc, -0.6, r, Math.PI, 0, true); h.lineTo(zc + r, -1.7); h.closePath();
+    s2.holes.push(h);
+  }
+  const bgeo = new THREE.ExtrudeGeometry(s2, { depth: w, bevelEnabled: false, curveSegments: 20 });
+  bgeo.translate(0, 0, -w / 2); bgeo.rotateY(Math.PI / 2);
+  g.add(new THREE.Mesh(bgeo, MAT.marble));
+  // 兽面衔吐: beast masks at each arch crown on both faces, spouting water
+  const beastMat = new THREE.MeshStandardMaterial({ color: '#8f9a86', roughness: 0.6 });
+  const spoutMat = new THREE.MeshStandardMaterial({ color: '#d8eef0', transparent: true, opacity: 0.55, roughness: 0.1 });
+  for (const zc of [-7, 0, 7]) for (const sx of [-1, 1]) {
+    const crown = -0.6 + (zc === 0 ? 2.6 : 2.1);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), beastMat); head.scale.set(0.6, 0.9, 1); head.position.set(sx * (w / 2 + 0.15), crown + 0.45, zc); g.add(head);
+    for (const dz of [-0.18, 0.18]) { const horn = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 6), beastMat); horn.position.set(sx * (w / 2 + 0.2), crown + 0.85, zc + dz); g.add(horn); }
+    const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.45), MAT.dark); jaw.position.set(sx * (w / 2 + 0.35), crown + 0.3, zc); g.add(jaw);
+    const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.12, crown + 0.3, 6, 1, true), spoutMat);
+    spout.position.set(sx * (w / 2 + 0.5), (crown + 0.3) / 2, zc); spout.userData.keepSeparate = true; g.add(spout);
+  }
+  // 石磴: stone steps down at both ends
+  for (const sz of [-1, 1]) for (let k = 0; k < 4; k++) {
+    const st = new THREE.Mesh(new THREE.BoxGeometry(w, deckY - k * 0.4, 0.5), MAT.marble);
+    st.position.set(0, (deckY - k * 0.4) / 2 + 0.0, sz * (len / 2 + 0.25 + k * 0.5)); g.add(st);
   }
   for (const sx of [-1, 1]) {
     const b = A.balustrade([[sx * (w / 2 - 0.2), -len / 2], [sx * (w / 2 - 0.2), len / 2]]);
-    b.position.y = deckY + 0.25; g.add(b);
+    b.position.y = deckY; g.add(b);
   }
   const pav = A.pavilion({ n: 4, r: 2.9, h: 3.4, platform: 0.3, plaque: p.plaque });
-  pav.position.y = deckY + 0.25; g.add(pav);
+  pav.position.y = deckY; g.add(pav);
   A.addCouplet(pav, p.couplet, { y: 0.3, h: 3.4, x: 2.05, z: 2.05 + 0.2 });
   label(p, 13);
 };
@@ -222,11 +245,37 @@ B.huajing = (p, g) => {
 };
 
 B.liaoting = (p, g) => {
-  // 港洞: the stream runs through a cave in the rockery (AI model with a cave mouth), 萝薜倒垂.
-  props.push({ model: 'cuizhang', x: p.x, z: p.z, y: -0.8, rot: -Math.PI / 2 + 0.25, height: 8.5, place: p.id });
-  const pl = A.addPlaque(g, p.plaque, { y: 4.6, z: 0, x: 0, width: 3.2 });
-  pl.rotation.y = Math.PI / 2 - 0.3; pl.position.set(14, 4.6, 0);
-  flora.push({ type: 'vines', x: p.x, z: p.z, n: 50, r: 6, onTop: 5 });
+  // 忽闻水声潺湲，泻出石洞，上则萝薜倒垂，下则落花浮荡 —— a rock tunnel (港洞) the stream flows out of.
+  const st = L.water.streams[1].pts, [ax, az] = st[2], [bx, bz] = st[3];
+  const dir = Math.atan2(bx - ax, bz - az); // local +z along the flow
+  const tunnel = new THREE.Group(); tunnel.rotation.y = dir - (p.rot || 0);
+  const sh = new THREE.Shape();
+  sh.moveTo(-8, -1.8); sh.lineTo(8, -1.8);
+  for (let i = 0; i <= 12; i++) { const t = i / 12, x = 8 - t * 16; sh.lineTo(x, 4.6 + Math.sin(t * Math.PI) * 1.4 + Math.sin(t * 17) * 0.4); }
+  sh.closePath();
+  const hole = new THREE.Path(); hole.moveTo(-3.6, -1.7); hole.lineTo(-3.6, 0.6); hole.absarc(0, 0.6, 3.6, Math.PI, 0, true); hole.lineTo(3.6, -1.7); hole.closePath();
+  sh.holes.push(hole);
+  const tg = new THREE.ExtrudeGeometry(sh, { depth: 9, bevelEnabled: true, bevelThickness: 0.8, bevelSize: 0.8, bevelSegments: 2, curveSegments: 16 });
+  tg.translate(0, 0, -4.5);
+  const rockMat = new THREE.MeshStandardMaterial({ color: '#a19d92', roughness: 1 });
+  tunnel.add(new THREE.Mesh(tg, rockMat));
+  // craggy rocks piled over and around the mouths
+  for (let i = 0; i < 22; i++) {
+    const r = A.rock(1.2 + Math.random() * 1.4, i + 11, rockMat);
+    const side = i % 2 ? 1 : -1;
+    r.position.set((Math.random() - 0.5) * 16, 4.5 + Math.random() * 2.5, side * (3 + Math.random() * 2.5));
+    tunnel.add(r);
+  }
+  // 萝薜倒垂: vine curtains hanging over both mouths
+  const vineMat = new THREE.MeshStandardMaterial({ map: T.leafTexture('willow'), alphaTest: 0.4, side: THREE.DoubleSide, color: '#6f9a4a' });
+  for (const side of [-1, 1]) for (let i = 0; i < 9; i++) {
+    const v = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 2.6 + Math.random()), vineMat);
+    v.position.set(-4.2 + i * 1.05, 4.3 - 1.3, side * 5.4); v.userData.keepSeparate = true; tunnel.add(v);
+  }
+  // 匾灯 '蓼汀花溆' over the upstream mouth (元妃舟入石港所见)
+  const pl = A.addPlaque(tunnel, p.plaque, { y: 5.2, z: -5.5, width: 3.6 }); pl.rotation.y = Math.PI;
+  g.add(tunnel);
+  flora.push({ type: 'vines', x: p.x, z: p.z, n: 40, r: 7, onTop: 6 });
   // 两行垂柳，杂着桃杏
   flora.push({ type: 'willow', pts: L.water.streams[1].pts.slice(1, 5), n: 16, off: 6 });
   flora.push({ type: 'peach', pts: L.water.streams[1].pts.slice(1, 5), n: 12, off: 9 });
