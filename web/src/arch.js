@@ -121,6 +121,14 @@ export const lanternSpots = []; // filled from mesh.userData.lantern after place
 
 const box = (w, h, d, m) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
 const cyl = (r, h, m, seg = 10) => new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), m);
+// Repeat a beam painting once per bay along the beam's long axis (u of the box's long faces).
+function perBay(mesh, n) {
+  if (n <= 1 || !mesh.material.map) return mesh;
+  const uv = mesh.geometry.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * n);
+  mesh.material.map.wrapS = THREE.RepeatWrapping; mesh.material.map.needsUpdate = true;
+  return mesh;
+}
 function at(mesh, x, y, z, ry = 0) { mesh.position.set(x, y, z); mesh.rotation.y = ry; return mesh; }
 
 // ---------------------------------------------------------------- roofs
@@ -533,11 +541,11 @@ export function hall({
   const beamY = top - db - pb - bh / 2;
   const bm = rustic ? MAT.beamPlain : beamMat;
   for (const z of [-D / 2, D / 2]) {
-    g.add(at(box(W, bh, 0.3, bm), 0, beamY, z));
+    g.add(at(perBay(box(W, bh, 0.3, bm), bays + (corridor ? 2 : 0)), 0, beamY, z)); // one painted panel per bay
     if (db) { g.add(at(box(W, db, 0.22, unpainted ? MAT.wood : MAT.dianban), 0, top - pb - db / 2, z)); g.add(at(box(W + 0.1, pb, 0.36, unpainted ? MAT.beamPlain : MAT.dougong), 0, top - pb / 2, z)); }
   }
   for (const x of [-W / 2, W / 2]) {
-    g.add(at(box(0.3, bh, D, bm), x, beamY, 0));
+    g.add(at(perBay(box(0.3, bh, D, bm), Math.max(1, Math.round(D / bw))), x, beamY, 0));
     if (db) { g.add(at(box(0.22, db, D, unpainted ? MAT.wood : MAT.dianban), x, top - pb - db / 2, 0)); g.add(at(box(0.36, pb, D + 0.1, unpainted ? MAT.beamPlain : MAT.dougong), x, top - pb / 2, 0)); }
   }
   // 斗拱 row along the four sides

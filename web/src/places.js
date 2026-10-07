@@ -138,6 +138,9 @@ B.qinfangting = (p, g) => {
   }
   const pav = A.pavilion({ n: 4, r: 2.9, h: 3.4, platform: 0.3, plaque: p.plaque });
   pav.position.y = deckY; g.add(pav);
+  // 第四十回：说笑之间，已来至沁芳亭子上……贾母倚柱坐下，命刘姥姥也坐在旁边
+  addProp(p, 'jiamu', -1.55, 1.75, 1.25, 0.5, deckY + 0.3);
+  addProp(p, 'liulaolao', 0.2, 2.05, 1.2, -0.3, deckY + 0.3);
   A.addCouplet(pav, p.couplet, { y: 0.3, h: 3.4, x: 2.05, z: 2.05 + 0.2 });
   label(p, 13);
 };
@@ -162,9 +165,31 @@ B.xiaoxiang = (p, g, lv) => {
   back.position.set(6, 0, -d / 2 + 4); g.add(collide(back));
   addFlora(p, 'pear', -7, -d / 2 + 5, 2, 2);
   addFlora(p, 'banana', -3, -d / 2 + 4, 3, 1.6);
-  // the little spring channel "开沟仅尺许 … 盘旋竹下而出"
-  const ch = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, d - 4), new THREE.MeshStandardMaterial({ color: '#3f6f74', roughness: 0.2 }));
-  ch.position.set(w / 2 - 2.5, 0.03, 0); g.add(ch);
+  // 后院墙下忽开一隙，得泉一派，开沟仅尺许，灌入墙内，绕阶缘屋至前院，盘旋竹下而出
+  const spring = new THREE.CatmullRomCurve3([
+    [-3, -d / 2 + 0.3], [-3.5, -d / 2 + 3], [-1, -7.4], [3, -7.2], [5.7, -6], [5.8, -2.5], [5.6, 1.2], [3.5, 3], [5, 6], [8.5, 7.5],
+    [9.5, 11], [7, 14], [10.5, 16.2], [w / 2 - 0.3, d / 2 - 1.5],
+  ].map(([x, z]) => new THREE.Vector3(x, 0, z)), false, 'catmullrom', 0.4);
+  const ribbon = (half, y, mat) => {
+    const N = 160, pos = [], idx = [], uv = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N, pt = spring.getPointAt(t), tg = spring.getTangentAt(t);
+      const nx = -tg.z, nz = tg.x;
+      pos.push(pt.x + nx * half, y, pt.z + nz * half, pt.x - nx * half, y, pt.z - nz * half);
+      uv.push(0, t * 40, 1, t * 40);
+      if (i) { const k = i * 2; idx.push(k - 2, k - 1, k, k - 1, k + 1, k); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx); geo.computeVertexNormals();
+    return new THREE.Mesh(geo, mat);
+  };
+  g.add(ribbon(0.36, 0.05, new THREE.MeshStandardMaterial({ color: '#8d8a80', roughness: 0.95, map: T.pebbleTexture(), side: THREE.DoubleSide })));   // stone-lined ditch
+  const brook = ribbon(0.2, 0.08, new THREE.MeshStandardMaterial({ color: '#4b7f86', roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+  brook.userData.keepSeparate = true; g.add(brook);
+  // the gap at the foot of the back wall where the spring comes in
+  const gap = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.7), new THREE.MeshStandardMaterial({ color: '#1d2226' }));
+  gap.position.set(-3, 0.22, -d / 2); g.add(gap);
   // 千百竿翠竹
   addFlora(p, 'bamboo', -9, 8, 220, 5);
   addFlora(p, 'bamboo', 9, 8, 200, 5);
