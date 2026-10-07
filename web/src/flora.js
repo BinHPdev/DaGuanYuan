@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import L from './layout.json';
 import { heightAt, waterDepthMetric, polyDist } from './terrain.js';
-import { leafTexture } from './textures.js';
+import { leafTexture, foliageTexture } from './textures.js';
 
 let seed = 12345;
 
@@ -98,20 +98,60 @@ function trunk(h, r, color = '#5b4330', lean = 0) {
   return colored(g, color);
 }
 
-// Species templates (unit ≈ metres).
+// Leaf-cluster cards scattered through an ellipsoid canopy (alpha-tested, tinted by vertex colour).
+function cards(r, color, x, y, z, sy = 1, n = 34, size = 1.0, hang = false) {
+  const list = [], c = new THREE.Color(color), e = new THREE.Euler();
+  for (let i = 0; i < n; i++) {
+    const u = rnd() * 2 - 1, th = rnd() * Math.PI * 2, rr = Math.cbrt(rnd()) * r;
+    const px = x + Math.sqrt(1 - u * u) * Math.cos(th) * rr, py = y + u * rr * sy, pz = z + Math.sqrt(1 - u * u) * Math.sin(th) * rr;
+    const s = size * r * (0.7 + rnd() * 0.5);
+    const g = new THREE.PlaneGeometry(s, hang ? s * 1.8 : s);
+    if (hang) g.translate(0, -s * 0.8, 0), g.rotateY(rnd() * Math.PI);
+    else { e.set(rnd() * Math.PI, rnd() * Math.PI, rnd() * Math.PI); g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(e)); }
+    g.translate(px, py, pz);
+    const shade = 0.75 + 0.35 * ((py - (y - r * sy)) / (2 * r * sy)); // lighter toward the top
+    const col = new Float32Array(g.attributes.position.count * 3);
+    for (let k = 0; k < col.length; k += 3) { const v = shade * (0.9 + rnd() * 0.2); col[k] = c.r * v; col[k + 1] = c.g * v; col[k + 2] = c.b * v; }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    list.push(g);
+  }
+  return mergeGeometries(list);
+}
+function limb(x0, y0, z0, x1, y1, z1, r, color) {
+  const a = new THREE.Vector3(x0, y0, z0), b = new THREE.Vector3(x1, y1, z1), len = a.distanceTo(b);
+  const g = new THREE.CylinderGeometry(r * 0.55, r, len, 5); g.deleteAttribute('uv');
+  g.translate(0, len / 2, 0);
+  g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize())));
+  g.translate(x0, y0, z0);
+  return colored(g, color);
+}
+
+// Species: trunk, canopy lobes [r, colour, x, y, z, sy], card texture. Solid cores keep crowns from looking hollow.
+const SPEC = {
+  willow: { t: [3.2, 0.3, '#4e3d2c', 0.12], lobes: [[2.6, '#a9c25a', -0.3, 4.4, 0, 0.9], [2.0, '#9db84f', 1.3, 3.8, 0.6, 0.9], [1.9, '#b3c968', -1.3, 3.7, -0.8, 0.9]], tex: 'willow', hang: true, n: 46, size: 1.0 },
+  pear: { t: [2.6, 0.22], lobes: [[1.8, '#f4f1ea', 0, 3.6, 0], [1.4, '#eef0e4', 1, 3.1, 0.6], [1.3, '#f7f5ef', -0.9, 3.3, -0.5]], tex: 'blossom' },
+  haitang: { t: [2.4, 0.25], lobes: [[2.4, '#d9677a', 0, 3.6, 0, 0.8], [1.8, '#e58b97', 1.5, 3.3, 0.4, 0.8], [1.8, '#c95466', -1.4, 3.2, -0.6, 0.8], [1.2, '#6f9a45', 0, 2.6, 1.2]], tex: 'blossom' },
+  peach: { t: [2.0, 0.2], lobes: [[1.6, '#f0a3b5', 0, 2.8, 0], [1.2, '#f5b8c6', 0.9, 2.5, 0.4], [1.1, '#e98ea4', -0.8, 2.6, -0.3]], tex: 'blossom' },
+  apricot: { t: [2.2, 0.2], lobes: [[1.7, '#f2a08f', 0, 3.0, 0], [1.3, '#ef8a7a', 1, 2.7, 0.5], [1.2, '#f7c0b0', -0.9, 2.8, -0.5]], tex: 'blossom' },
+  plum: { t: [1.8, 0.18, '#3a2a22', 0.2], lobes: [[1.3, '#c4243b', 0.3, 2.6, 0, 0.8], [1.0, '#d73a50', -0.6, 2.3, 0.4, 0.8], [0.9, '#b51d33', 0.8, 2.1, -0.4, 0.8]], tex: 'blossom', n: 26 },
+  pine: { t: [4.5, 0.32, '#5a3d2b', 0.05], lobes: [[2.4, '#2f4c32', 0.4, 5.6, 0, 0.45], [2.0, '#36553a', -1.3, 4.6, 0.5, 0.45], [1.8, '#2a4630', 1.3, 6.6, -0.4, 0.45], [1.5, '#31503a', -0.2, 7.4, 0.2, 0.45]], tex: 'needle', n: 30 },
+  wutong: { t: [4.5, 0.32, '#7d8a6a'], lobes: [[3.0, '#5f8a3c', 0, 6.2, 0], [2.2, '#6c9646', 1.8, 5.4, 0.8], [2.2, '#557e36', -1.7, 5.6, -0.7]], tex: 'leaf' },
+  mulberry: { t: [2.4, 0.22], lobes: [[1.9, '#5d8a35', 0, 3.4, 0], [1.4, '#6a9640', 1.0, 3.0, 0.5]], tex: 'leaf' },
+  osmanthus: { t: [1.6, 0.2], lobes: [[2.0, '#3f6a32', 0, 2.8, 0, 1.1], [1.0, '#d9b24a', 0.8, 3.2, 0.6, 0.6]], tex: 'leaf' },
+  generic: { t: [3.0, 0.28], lobes: [[2.6, '#557f34', 0, 4.2, 0], [2.0, '#4c7530', 1.4, 3.6, 0.7], [2.0, '#628a3c', -1.3, 3.8, -0.8]], tex: 'leaf' },
+};
+function treeTemplate(sp) {
+  const [h, r, bark = '#5b4330', lean = 0] = sp.t;
+  const solid = [trunk(h, r, bark, lean)], leaf = [];
+  for (const [lr, col, x, y, z, sy = 1] of sp.lobes) {
+    solid.push(limb(0, h * 0.75, 0, x * 0.8, y - lr * sy * 0.3, z * 0.8, r * 0.5, bark));
+    const core = new THREE.Color(col).multiplyScalar(0.72).getStyle();
+    if (!sp.hang) solid.push(blob(lr * 0.5, core, x, y, z, sy));
+    leaf.push(cards(lr * 1.05, col, x, y, z, sy, sp.n || 44, sp.size || 1.15, sp.hang));
+  }
+  return { solid: mergeGeometries(solid), cards: mergeGeometries(leaf), tex: sp.tex };
+}
 const SPECIES = {
-  willow: () => mergeGeometries([trunk(3.2, 0.3, '#4e3d2c', 0.12),
-    blob(2.6, '#a9c25a', -0.3, 4.2, 0, 1.45), blob(2.0, '#9db84f', 1.2, 3.4, 0.6, 1.6), blob(1.9, '#b3c968', -1.2, 3.2, -0.8, 1.6)]),
-  pear: () => mergeGeometries([trunk(2.6, 0.22), blob(1.8, '#f4f1ea', 0, 3.6, 0), blob(1.4, '#eef0e4', 1, 3.1, 0.6), blob(1.3, '#f7f5ef', -0.9, 3.3, -0.5)]),
-  haitang: () => mergeGeometries([trunk(2.4, 0.25), blob(2.4, '#d9677a', 0, 3.6, 0, 0.8), blob(1.8, '#e58b97', 1.5, 3.3, 0.4, 0.8), blob(1.8, '#c95466', -1.4, 3.2, -0.6, 0.8), blob(1.2, '#6f9a45', 0, 2.6, 1.2)]),
-  peach: () => mergeGeometries([trunk(2.0, 0.2), blob(1.6, '#f0a3b5', 0, 2.8, 0), blob(1.2, '#f5b8c6', 0.9, 2.5, 0.4), blob(1.1, '#e98ea4', -0.8, 2.6, -0.3)]),
-  apricot: () => mergeGeometries([trunk(2.2, 0.2), blob(1.7, '#f2a08f', 0, 3.0, 0), blob(1.3, '#ef8a7a', 1, 2.7, 0.5), blob(1.2, '#f7c0b0', -0.9, 2.8, -0.5)]),
-  plum: () => mergeGeometries([trunk(1.8, 0.18, '#3a2a22', 0.2), blob(1.3, '#c4243b', 0.3, 2.6, 0, 0.8), blob(1.0, '#d73a50', -0.6, 2.3, 0.4, 0.8), blob(0.9, '#b51d33', 0.8, 2.1, -0.4, 0.8)]),
-  pine: () => mergeGeometries([trunk(4.5, 0.32, '#5a3d2b', 0.05), blob(2.4, '#2f4c32', 0.4, 5.6, 0, 0.45), blob(2.0, '#36553a', -1.3, 4.6, 0.5, 0.45), blob(1.8, '#2a4630', 1.3, 6.6, -0.4, 0.45), blob(1.5, '#31503a', -0.2, 7.4, 0.2, 0.45)]),
-  wutong: () => mergeGeometries([trunk(4.5, 0.32, '#7d8a6a'), blob(3.0, '#5f8a3c', 0, 6.2, 0), blob(2.2, '#6c9646', 1.8, 5.4, 0.8), blob(2.2, '#557e36', -1.7, 5.6, -0.7)]),
-  mulberry: () => mergeGeometries([trunk(2.4, 0.22), blob(1.9, '#5d8a35', 0, 3.4, 0), blob(1.4, '#6a9640', 1.0, 3.0, 0.5)]),
-  osmanthus: () => mergeGeometries([trunk(1.6, 0.2), blob(2.0, '#3f6a32', 0, 2.8, 0, 1.1), blob(1.0, '#d9b24a', 0.8, 3.2, 0.6, 0.6)]),
-  generic: () => mergeGeometries([trunk(3.0, 0.28), blob(2.6, '#557f34', 0, 4.2, 0), blob(2.0, '#4c7530', 1.4, 3.6, 0.7), blob(2.0, '#628a3c', -1.3, 3.8, -0.8)]),
   vines: () => mergeGeometries([blob(0.6, '#3f6f2e', 0, 0.3, 0, 0.7), blob(0.35, '#b9302c', 0.4, 0.5, 0.2, 1), blob(0.4, '#d6b73c', -0.35, 0.45, -0.2, 1)]),
   crops: () => mergeGeometries([blob(0.35, '#86a83e', 0, 0.2, 0, 0.8), blob(0.25, '#e3d14a', 0.3, 0.25, 0, 0.8)]),
   tumi: () => blob(0.35, '#faf6ea', 0, 0, 0, 0.6),
@@ -226,8 +266,18 @@ export function buildFlora(requests, exclusions) {
 
   // Build instanced meshes ---------------------------------------------------------
   const vcBase = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+  const cardTex = {};
   for (const [type, mats] of Object.entries(buckets)) {
-    if (SPECIES[type]) {
+    if (SPEC[type]) {
+      const tpl = treeTemplate(SPEC[type]);
+      const sm = new THREE.InstancedMesh(tpl.solid, windify(vcBase.clone(), WIND[type]), mats.length);
+      const cm = new THREE.InstancedMesh(tpl.cards, windify(new THREE.MeshStandardMaterial({
+        vertexColors: true, map: (cardTex[tpl.tex] ||= foliageTexture(tpl.tex)), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.9,
+      }), WIND[type]), mats.length);
+      mats.forEach((m, i) => { sm.setMatrixAt(i, m); cm.setMatrixAt(i, m); });
+      sm.castShadow = cm.castShadow = true; sm.receiveShadow = cm.receiveShadow = true;
+      group.add(sm, cm);
+    } else if (SPECIES[type]) {
       const geo = SPECIES[type]();
       const mat = WIND[type] ? windify(vcBase.clone(), WIND[type]) : vcBase;
       const im = new THREE.InstancedMesh(geo, mat, mats.length);

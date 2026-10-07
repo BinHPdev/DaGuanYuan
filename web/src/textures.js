@@ -321,3 +321,40 @@ export function richBeamTexture() {
   g.fillStyle = '#c8a24a'; g.fillRect(0, 0, 512, 3); g.fillRect(0, 61, 512, 3);
   return tex(c);
 }
+
+// Foliage cluster cards (white/grey so vertex colours tint them). kind: leaf | blossom | needle | willow
+export function foliageTexture(kind = 'leaf') {
+  const [c, g] = canvas(256, 256);
+  g.clearRect(0, 0, 256, 256);
+  const R = (a, b) => a + Math.random() * (b - a);
+  // keep clusters roughly round so card edges never show
+  const inside = (x, y) => Math.hypot(x - 128, y - 128) < 112 * (0.75 + 0.25 * Math.random());
+  if (kind === 'needle') {
+    for (let i = 0; i < 260; i++) {
+      const x = R(20, 236), y = R(20, 236); if (!inside(x, y)) continue;
+      const v = R(150, 255); g.strokeStyle = `rgb(${v},${v},${v})`; g.lineWidth = 1.6;
+      for (let k = 0; k < 7; k++) { const a = R(0, 6.28); g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * 9, y + Math.sin(a) * 9); g.stroke(); }
+    }
+  } else if (kind === 'willow') {
+    for (let i = 0; i < 70; i++) {
+      const x = R(10, 246), len = R(120, 250); const v = R(170, 255);
+      g.strokeStyle = `rgb(${v},${v},${v})`; g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(x, 0);
+      for (let y = 0; y < len; y += 5) { const xx = x + Math.sin(y * 0.03 + i) * 3; g.lineTo(xx, y); g.moveTo(xx, y); g.lineTo(xx + 3, y + 4); g.moveTo(xx, y); }
+      g.stroke();
+    }
+  } else {
+    for (let i = 0; i < 520; i++) {
+      const x = R(16, 240), y = R(16, 240); if (!inside(x, y)) continue;
+      const v = R(140, 255);
+      g.fillStyle = `rgb(${v},${v},${v})`;
+      g.save(); g.translate(x, y); g.rotate(R(0, 6.28));
+      if (kind === 'blossom' && Math.random() < 0.75) {
+        for (let k = 0; k < 5; k++) { g.rotate(1.2566); g.beginPath(); g.ellipse(0, 3.2, 2.2, 3.4, 0, 0, 7); g.fill(); }
+      } else { g.beginPath(); g.ellipse(0, 0, R(4, 7), R(2, 3.2), 0, 0, 7); g.fill(); }
+      g.restore();
+    }
+  }
+  const t = tex(c, false);
+  return t;
+}
