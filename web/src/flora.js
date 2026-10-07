@@ -384,7 +384,7 @@ export function buildFlora(requests, exclusions) {
         const tpl = willowTemplate();
         const sm = new THREE.InstancedMesh(tpl.solid, windify(vcBase.clone(), { ...WIND.willow, droop: 0, amp: 0.05 }), part.length);
         const cm = new THREE.InstancedMesh(tpl.cards, windify(new THREE.MeshStandardMaterial({
-          vertexColors: true, map: strandTexture(), alphaTest: 0.35, side: THREE.DoubleSide, roughness: 1, envMapIntensity: 0.25,
+          vertexColors: true, map: strandTexture(), alphaTest: 0.12, side: THREE.DoubleSide, roughness: 1, envMapIntensity: 0.25,
         }), { ...WIND.willow, hangAttr: true }), part.length);
         part.forEach((m, i) => { sm.setMatrixAt(i, m); cm.setMatrixAt(i, m); });
         sm.castShadow = cm.castShadow = true; sm.receiveShadow = cm.receiveShadow = true;

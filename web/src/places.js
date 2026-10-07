@@ -11,7 +11,8 @@ import { taihuRock, rockMaterial } from './rocks.js';
 
 export const flora = [];   // {type, x, z, n, r} or {type, pts:[[x,z]...]}
 export const props = [];   // {model, x, y, z, rot, height}
-export const labels = [];  // {place, pos: Vector3}
+export const labels = [];
+export const animatedTextures = []; // [texture, speed] scrolled each frame by main.js  // {place, pos: Vector3}
 const colliderOwners = []; // objects whose userData marks collision geometry
 
 const P = Object.fromEntries(L.places.map((p) => [p.id, p]));
@@ -185,7 +186,13 @@ B.xiaoxiang = (p, g, lv) => {
     return new THREE.Mesh(geo, mat);
   };
   g.add(ribbon(0.36, 0.05, new THREE.MeshStandardMaterial({ color: '#8d8a80', roughness: 0.95, map: T.pebbleTexture(), side: THREE.DoubleSide })));   // stone-lined ditch
-  const brook = ribbon(0.2, 0.08, new THREE.MeshStandardMaterial({ color: '#4b7f86', roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+  // flowing ripple streaks scrolled along the strip (v runs along the stream)
+  const fc = document.createElement('canvas'); fc.width = 32; fc.height = 128;
+  const fx = fc.getContext('2d'); fx.fillStyle = '#4b7f86'; fx.fillRect(0, 0, 32, 128);
+  for (let i = 0; i < 40; i++) { fx.fillStyle = `rgba(220,240,240,${0.15 + Math.random() * 0.35})`; fx.fillRect(Math.random() * 30, Math.random() * 128, 1 + Math.random() * 3, 4 + Math.random() * 10); }
+  const flowTex = new THREE.CanvasTexture(fc); flowTex.wrapS = flowTex.wrapT = THREE.RepeatWrapping; flowTex.colorSpace = THREE.SRGBColorSpace;
+  animatedTextures.push([flowTex, 0.6]);
+  const brook = ribbon(0.2, 0.08, new THREE.MeshStandardMaterial({ map: flowTex, roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.88, side: THREE.DoubleSide }));
   brook.userData.keepSeparate = true; g.add(brook);
   // the gap at the foot of the back wall where the spring comes in
   const gap = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.7), new THREE.MeshStandardMaterial({ color: '#1d2226' }));

@@ -13,7 +13,8 @@ import { buildWater } from './water.js';
 import { registerFlats, buildPlaces, flora, props, labels, collectColliders } from './places.js';
 import { buildFlora } from './flora.js';
 import { placeProps } from './props.js';
-import { placeInteriorModels } from './interiors.js';
+import { placeInteriorModels, setInteriorLight } from './interiors.js';
+import { animatedTextures } from './places.js';
 import { initDynamics, updateDynamics } from './dynamics.js';
 import { waterDepthMetric } from './terrain.js';
 import { buildBridges, buildBankRocks, buildLanternField, buildGlow } from './details.js';
@@ -28,6 +29,9 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
+// The sun never moves, so the shadow map is redrawn only when lighting or content changes (big win on 5M-triangle frames).
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.needsUpdate = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.9;
 renderer.domElement.className = 'gl';
@@ -91,6 +95,8 @@ function applyTime(i) {
   // 元宵: every lantern lit, 风灯 along the banks; 月夜: only building lanterns, dimmer
   MAT.lantern.emissiveIntensity = t.yuanxiao ? 2.4 : t.night ? 1.2 : i === 1 ? 0.35 : 0;
   setWindowGlow(t.yuanxiao ? 0.55 : t.night ? 0.35 : i === 1 ? 0.06 : 0);
+  setInteriorLight(!!t.night, !!t.yuanxiao);
+  renderer.shadowMap.needsUpdate = true;
   if (lanternField) { lanternField.mesh.visible = !!t.yuanxiao; fieldGlow.visible = !!t.yuanxiao; buildingGlow.visible = !!t.night; }
   $('b-time').textContent = '时辰：' + t.name;
   updateEnvironment();
@@ -162,6 +168,7 @@ const lanternSpots = [];
 const batched = batch(placesRoot);
 scene.add(batched);
 const interiorsReady = placeInteriorModels(placesRoot, scene);
+interiorsReady?.then?.(() => { renderer.shadowMap.needsUpdate = true; });
 lanternField = buildLanternField();
 fieldGlow = buildGlow(lanternField.points, 3.4);
 buildingGlow = buildGlow(lanternSpots, 4.5);
@@ -401,6 +408,7 @@ function tick() {
   const now = performance.now(); const dt = Math.min((now - last) / 1000, 0.05); last = now;
   water.material.uniforms.uTime.value += dt;
   sky.position.copy(camera.position);
+  for (const [t, v] of animatedTextures) t.offset.y -= v * dt; // flowing water strips
   updateDynamics(dt, now / 1000);
   if (flight) {
     flight.t += dt / flight.dur;
@@ -438,5 +446,5 @@ addEventListener('resize', () => {
   bloomPass.setSize(innerWidth / 2, innerHeight / 2);
 });
 tick();
-propsReady.then(() => { const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
+propsReady.then(() => { renderer.shadowMap.needsUpdate = true; const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
 window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime: setTime, setQuality, setTimeByName: (n) => setTime(Math.max(0, TIMES.findIndex((t) => t.name === n))), orbit, showCard, get flight() { return flight; } };

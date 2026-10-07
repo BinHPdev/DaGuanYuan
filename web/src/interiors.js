@@ -24,7 +24,15 @@ function mat({ glow, ...o } = {}) {
   const m = new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0, ...o });
   if (o.map) { m.emissive.set('#ffffff'); m.emissiveMap = o.map; m.emissiveIntensity = glow ?? GLOW; }
   else if (o.color) { m.emissive.set(o.color); m.emissiveIntensity = glow ?? GLOW; }
+  ALL_MATS.push([m, m.emissiveIntensity]);
   return m;
+}
+const ALL_MATS = []; // [material, base emissive]
+// Night: rooms read as lamp-lit — lamps (base ≥ 1) flare, surfaces take a warmer, stronger fill.
+export function setInteriorLight(night, yuanxiao = false) {
+  for (const [m, base] of ALL_MATS) {
+    m.emissiveIntensity = base >= 1 ? base * (night ? (yuanxiao ? 3 : 2.2) : 1) : base * (night ? 1.6 : 1);
+  }
 }
 function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
 function tex(c, repeat = false) {
