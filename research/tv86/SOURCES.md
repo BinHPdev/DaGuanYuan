@@ -16,3 +16,22 @@ All images from Wikimedia Commons (Beijing 大观园, the set built 1984–88 fo
 | ref10.jpg | https://commons.wikimedia.org/wiki/File:%E5%A4%A7%E8%A7%82%E5%9B%AD_Beijing,_China_(25765001010).jpg | CC BY 2.0 | 大观园 Beijing, China (25765001010).jpg — 大观园  Beijing, China |
 | ref11.jpg | https://commons.wikimedia.org/wiki/File:%E5%A4%A7%E8%A7%82%E5%9B%AD_Beijing,_China_(26002704616).jpg | CC BY 2.0 | 大观园 Beijing, China (26002704616).jpg — 大观园  Beijing, China |
 | ref12.jpg | https://commons.wikimedia.org/wiki/File:%E5%A4%A7%E8%A7%82%E5%9B%AD_Beijing,_China_(26011781116).jpg | CC BY 2.0 | 大观园 Beijing, China (26011781116).jpg — 大观园  Beijing, China |
+
+## Authors (attribution required by CC BY / CC BY-SA)
+
+| file | author |
+|---|---|
+| ref01.jpg | 刻意 |
+| ref02.jpg | 刻意 |
+| ref03.jpg | 刻意 |
+| ref04.jpg | 刻意 |
+| ref05.jpg | 刻意 |
+| ref06.jpg | 朱華龍 - Zhu Hua Long |
+| ref07.jpg | 朱華龍 - Zhu Hua Long |
+| ref08.jpg | 朱華龍 - Zhu Hua Long |
+| ref09.jpg | 朱華龍 - Zhu Hua Long |
+| ref10.jpg | 朱華龍 - Zhu Hua Long |
+| ref11.jpg | 朱華龍 - Zhu Hua Long |
+| ref12.jpg | 朱華龍 - Zhu Hua Long |
+
+These photos are redistributed here (resized) under their original licenses (see table above); they are not covered by this repository's MIT license.
