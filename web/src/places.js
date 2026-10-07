@@ -413,7 +413,22 @@ B.yihong = (p, g) => {
   addProp(p, 'shizu', -1.5, 6.5, 1.8, 0.4);
   addProp(p, 'shizu', 2.5, 8.5, 1.3, 2.2);
   // 后院满架蔷薇、宝相
-  flora.push({ type: 'rose', ...(([x, z]) => ({ x, z }))(toWorld(p, 0, -d / 2 + 3)), n: 60, r: 6 });
+  // 院中满架蔷薇、宝相: two bamboo trellises in the back court, roses climbing over them
+  for (const tz of [-d / 2 + 3, -d / 2 + 6]) {
+    const tr = new THREE.Group();
+    const len = w - 8;
+    for (let i = 0; i <= len / 2; i++) for (const sz of [-0.8, 0.8]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 2.4, 6), MAT.bamboo); post.position.set(-len / 2 + i * 2, 1.2, sz); tr.add(post);
+    }
+    for (let i = 0; i <= len / 0.5; i++) { const sl = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 1.9), MAT.bamboo); sl.position.set(-len / 2 + i * 0.5, 2.42, 0); tr.add(sl); }
+    for (const sz of [-0.8, 0.8]) { const rail = new THREE.Mesh(new THREE.BoxGeometry(len, 0.05, 0.05), MAT.bamboo); rail.position.set(0, 2.38, sz); tr.add(rail); }
+    tr.position.z = tz; g.add(tr);
+    for (let i = 0; i < 14; i++) {
+      const [x, z] = toWorld(p, -len / 2 + (i + 0.5) * (len / 14), tz);
+      flora.push({ type: 'rose', x, z, n: 1, r: 0.2, onTop: 2.0 });       // over the top
+      flora.push({ type: 'rose', x, z, n: 2, r: 0.9 });                   // climbing at the base
+    }
+  }
   addFlora(p, 'willow', -w / 2 - 4, 0, 4, 6); // 绿柳周垂
   addFlora(p, 'willow', w / 2 + 4, 0, 4, 6);
   label(p, 12);

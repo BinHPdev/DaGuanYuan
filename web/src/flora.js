@@ -135,6 +135,12 @@ function limb(x0, y0, z0, x1, y1, z1, r, color) {
 
 // Species: trunk, canopy lobes [r, colour, x, y, z, sy], card texture. Solid cores keep crowns from looking hollow.
 const SPEC = {
+  // flowering shrubs as leaf + blossom clusters (蔷薇/宝相, 牡丹, 芍药, 荼蘼, 木香)
+  rose: { t: [0.3, 0.03, '#4a3a26'], lobes: [[0.55, '#4b7a30', 0, 0.55, 0, 0.8], [0.3, '#c8243a', 0.22, 0.85, 0.12, 0.7], [0.28, '#ef6f88', -0.22, 0.8, -0.15, 0.7]], tex: 'blossom', n: 16, size: 0.9 },
+  peony: { t: [0.25, 0.03, '#4a3a26'], lobes: [[0.5, '#55803a', 0, 0.45, 0, 0.75], [0.26, '#d14d77', 0.05, 0.8, 0, 0.6], [0.2, '#f2a3bd', -0.2, 0.72, 0.15, 0.6]], tex: 'blossom', n: 14, size: 1.0 },
+  shaoyao: { t: [0.2, 0.02, '#4a3a26'], lobes: [[0.42, '#5d8a3a', 0, 0.38, 0, 0.75], [0.22, '#f08aa5', 0, 0.68, 0, 0.6]], tex: 'blossom', n: 12, size: 1.0 },
+  tumi: { t: [0.05, 0.02, '#4a3a26'], lobes: [[0.45, '#5a8a3c', 0, 0.1, 0, 0.5], [0.35, '#f7f4ea', 0.1, 0.2, 0.1, 0.5]], tex: 'blossom', n: 14, size: 1.0 },
+  muxiang: { t: [0.05, 0.02, '#4a3a26'], lobes: [[0.45, '#5a8a3c', 0, 0.1, 0, 0.5], [0.35, '#f3e6a8', 0.1, 0.2, 0.1, 0.5]], tex: 'blossom', n: 14, size: 1.0 },
   // 蘅芜苑异草: trailing leafy masses with 实若丹砂 berries and 花如金桂 clusters (cards, not balls)
   vines: { t: [0.05, 0.02, '#3d4a2a'], lobes: [[0.75, '#3f6a2e', 0, 0.35, 0, 0.55], [0.55, '#4f7a36', 0.45, 0.25, 0.2, 0.5], [0.22, '#b3322b', -0.3, 0.45, 0.25, 0.6], [0.2, '#d4ad38', 0.25, 0.5, -0.3, 0.6]], tex: 'leaf', n: 26, size: 1.1 },
   willow: { t: [3.2, 0.3, '#4e3d2c', 0.12], lobes: [[2.6, '#a9c25a', -0.3, 4.4, 0, 0.9], [2.0, '#9db84f', 1.3, 3.8, 0.6, 0.9], [1.9, '#b3c968', -1.3, 3.7, -0.8, 0.9]], tex: 'willow', hang: true, n: 46, size: 1.0 },
@@ -163,11 +169,6 @@ function treeTemplate(sp) {
 const SPECIES = {
   // vines handled as a SPEC entry below (leaf cards)
   crops: () => mergeGeometries([blob(0.35, '#86a83e', 0, 0.2, 0, 0.8), blob(0.25, '#e3d14a', 0.3, 0.25, 0, 0.8)]),
-  tumi: () => blob(0.35, '#faf6ea', 0, 0, 0, 0.6),
-  muxiang: () => blob(0.35, '#f3e7b2', 0, 0, 0, 0.6),
-  peony: () => mergeGeometries([blob(0.35, '#55803a', 0, 0.3, 0), blob(0.24, '#d14d77', 0, 0.62, 0, 0.7)]),
-  shaoyao: () => mergeGeometries([blob(0.3, '#5d8a3a', 0, 0.25, 0), blob(0.2, '#f08aa5', 0, 0.55, 0, 0.7)]),
-  rose: () => mergeGeometries([blob(0.45, '#4d7a32', 0, 0.45, 0), blob(0.16, '#d02a3f', 0.25, 0.8, 0.1), blob(0.16, '#f06f86', -0.2, 0.75, -0.15)]),
 };
 
 // ---------------------------------------------------------------- 垂柳
