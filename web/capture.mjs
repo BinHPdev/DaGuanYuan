@@ -15,6 +15,8 @@ const shots = [
   ['dicui', V([28, 5, 6], [20, 2, -14]), 0],
   ['interior', V([106.6, 2.4, -14.3], [112, 2.2, -14]), 0],
   ['palace', V([62, 38, -52], [10, 4, -116]), 1],
+  ['snow', V([95, 85, 160], [-5, 0, -25]), 3],
+  ['snow_plum', V([60, 14, 8], [62, 2, 30]), 3],
 ];
 const b = await chromium.launch({ channel: 'chrome', args: ['--use-angle=metal', '--ignore-gpu-blocklist'] });
 const p = await b.newPage({ viewport: { width: 1600, height: 900 } });

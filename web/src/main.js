@@ -15,6 +15,7 @@ import { buildFlora } from './flora.js';
 import { placeProps } from './props.js';
 import { placeInteriorModels, setInteriorLight } from './interiors.js';
 import { animatedTextures } from './places.js';
+import { snowUniform, snowifyScene, buildSnowfall } from './snow.js';
 import { initDynamics, updateDynamics } from './dynamics.js';
 import { waterDepthMetric } from './terrain.js';
 import { buildBridges, buildBankRocks, buildLanternField, buildGlow } from './details.js';
@@ -70,6 +71,7 @@ const TIMES = [
   { name: '昼', elev: 48, az: 150, sun: '#fff3dd', int: 2.6, hemi: 1.0, fog: '#cdd9dc', top: '#6f9cc4', hor: '#d6e2e4', glow: '#fff4d6', exp: 1.05 },
   { name: '暮', elev: 7, az: 240, sun: '#ffb071', int: 1.8, hemi: 0.5, fog: '#d9b49a', top: '#5a6f9a', hor: '#f0b88a', glow: '#ffcf8a', exp: 0.85 },
   { name: '元宵', elev: 30, az: 60, sun: '#8ea6d6', int: 0.5, hemi: 0.3, fog: '#1a1f2c', top: '#070b18', hor: '#2a2236', glow: '#000000', exp: 0.75, night: true, yuanxiao: true },
+  { name: '雪', elev: 22, az: 200, sun: '#eef2f7', int: 1.3, hemi: 1.0, fog: '#dde3e8', top: '#aab8c6', hor: '#e8ecef', glow: '#ffffff', exp: 0.95, snow: true },
   { name: '月夜', elev: 38, az: 120, sun: '#a9c0ea', int: 0.7, hemi: 0.22, fog: '#1d2633', top: '#0b1226', hor: '#24304a', glow: '#000000', exp: 0.7, night: true },
 ];
 let timeIdx = 0;
@@ -96,6 +98,9 @@ function applyTime(i) {
   MAT.lantern.emissiveIntensity = t.yuanxiao ? 2.4 : t.night ? 1.2 : i === 1 ? 0.35 : 0;
   setWindowGlow(t.yuanxiao ? 0.55 : t.night ? 0.35 : i === 1 ? 0.06 : 0);
   setInteriorLight(!!t.night, !!t.yuanxiao);
+  snowUniform.value = t.snow ? 1 : 0;
+  if (snowfall) snowfall.visible = !!t.snow;
+  if (lotusGroup) lotusGroup.forEach((o) => (o.visible = !t.snow)); // 荷叶 gone in winter
   renderer.shadowMap.needsUpdate = true;
   if (lanternField) { lanternField.mesh.visible = !!t.yuanxiao; fieldGlow.visible = !!t.yuanxiao; buildingGlow.visible = !!t.night; }
   $('b-time').textContent = '时辰：' + t.name;
@@ -165,6 +170,7 @@ function batch(root) {
 }
 scene.remove(placesRoot);
 const lanternSpots = [];
+let snowfall = null, lotusGroup = null;
 const batched = batch(placesRoot);
 scene.add(batched);
 const interiorsReady = placeInteriorModels(placesRoot, scene);
@@ -173,6 +179,9 @@ lanternField = buildLanternField();
 fieldGlow = buildGlow(lanternField.points, 3.4);
 buildingGlow = buildGlow(lanternSpots, 4.5);
 scene.add(lanternField.mesh, fieldGlow, buildingGlow);
+snowfall = buildSnowfall();
+scene.add(snowfall);
+lotusGroup = floraGroup.children.filter((o) => o.userData.lotus);
 
 const propsReady = placeProps(props, scene);
 initDynamics({ scene, camera, terrain, water, flora: floraGroup, heightAt, waterDepthMetric, layout: L, getTimeMode: () => TIMES[timeIdx].name });
@@ -400,6 +409,7 @@ function setQuality(q) {
 }
 $('b-quality').onclick = () => setQuality(quality === 'high' ? 'mid' : 'high');
 setQuality(quality);
+snowifyScene(scene);
 applyTime(timeIdx);
 
 let last = performance.now();
@@ -410,6 +420,7 @@ function tick() {
   sky.position.copy(camera.position);
   for (const [t, v] of animatedTextures) t.offset.y -= v * dt; // flowing water strips
   updateDynamics(dt, now / 1000);
+  if (snowfall.visible) snowfall.userData.update(dt, now / 1000, camera);
   if (flight) {
     flight.t += dt / flight.dur;
     const k = flight.t >= 1 ? 1 : 0.5 - 0.5 * Math.cos(Math.PI * flight.t);
@@ -446,5 +457,5 @@ addEventListener('resize', () => {
   bloomPass.setSize(innerWidth / 2, innerHeight / 2);
 });
 tick();
-propsReady.then(() => { renderer.shadowMap.needsUpdate = true; const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
+propsReady.then(() => { renderer.shadowMap.needsUpdate = true; snowifyScene(scene); const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
 window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime: setTime, setQuality, setTimeByName: (n) => setTime(Math.max(0, TIMES.findIndex((t) => t.name === n))), orbit, showCard, get flight() { return flight; } };

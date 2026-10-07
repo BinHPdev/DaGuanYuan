@@ -288,7 +288,7 @@
     0,
     -60
    ],
-   "time": 1,
+   "time": "暮",
    "spot": "global"
   },
   {
@@ -296,7 +296,7 @@
    "label": "月夜（第七十六回）",
    "place": "xiaoxiang",
    "dist": 60,
-   "time": 2,
+   "time": "月夜",
    "spot": "global"
   },
   {
@@ -344,6 +344,22 @@
     -12
    ],
    "spot": "dicui"
+  },
+  {
+   "id": "snow_longcui",
+   "label": "雪·栊翠庵红梅",
+   "pos": [
+    60,
+    14,
+    8
+   ],
+   "target": [
+    62,
+    2,
+    30
+   ],
+   "spot": "longcui",
+   "time": "雪"
   }
  ],
  "checklists": {

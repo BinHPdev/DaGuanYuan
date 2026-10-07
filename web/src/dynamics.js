@@ -13,6 +13,7 @@ let nightLast = null;
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const _sky = new THREE.Color();
+const isWinter = () => (C.getTimeMode?.() || '') === '雪';
 const isNight = () => {
   const m = C.getTimeMode?.() || '昼';
   if (m === '月夜' || m === '元宵') return true;
@@ -160,6 +161,8 @@ function petals() {
 
   return {
     update(dt, t) {
+      im.visible = !isWinter(); // no blossoms falling in the snow
+      if (!im.visible) return;
       refresh -= dt;
       if (refresh <= 0) {
         refresh = 1.5;
@@ -272,8 +275,8 @@ function butterflies() {
   const a = [0, 0, 0], c2 = [0, 0, 0];
   return {
     update(dt, t, night, changed) {
-      im.visible = !night;
-      if (night) return;
+      im.visible = !night && !isWinter();
+      if (!im.visible) return;
       uni.uT.value = t;
       for (let i = 0; i < N; i++) {
         const b = B[i];

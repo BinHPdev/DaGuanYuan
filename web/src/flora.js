@@ -398,6 +398,7 @@ export function buildFlora(requests, exclusions) {
       }), WIND[type]), mats.length);
       mats.forEach((m, i) => { sm.setMatrixAt(i, m); cm.setMatrixAt(i, m); });
       sm.castShadow = cm.castShadow = true; sm.receiveShadow = cm.receiveShadow = true;
+      cm.userData.snowAmt = type === 'plum' ? 0 : 0.55; sm.userData.snowAmt = 0.7;
       group.add(sm, cm);
     } else if (SPECIES[type]) {
       const geo = SPECIES[type]();
@@ -411,7 +412,7 @@ export function buildFlora(requests, exclusions) {
   if (buckets.bamboo) group.add(...bambooMeshes(buckets.bamboo));
   if (buckets.banana) group.add(cardMesh(buckets.banana, 'banana'));
   if (buckets.reed) group.add(cardMesh(buckets.reed, 'reed'));
-  if (buckets.lotus) group.add(...lotusMeshes(buckets.lotus));
+  if (buckets.lotus) { const lm = lotusMeshes(buckets.lotus); lm.forEach((o) => (o.userData.lotus = true)); group.add(...lm); }
   if (buckets.petals) group.add(discMesh(buckets.petals, '#f3b6c2', 0.12, WIND.petals));
   return group;
 }

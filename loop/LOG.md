@@ -62,3 +62,10 @@
 - 改动：main.js 阴影图改为按需更新（太阳不动：时辰切换、道具/家具加载完成时刷新），夜景鸟瞰 32 → 54 fps；places.js 泉流贴图沿水流滚动（animatedTextures）；interiors.js setInteriorLight（夜间灯具×2.2、元宵×3，室内补光×1.6）；柳条 alphaTest 回调到 0.12，远处垂柳不再只剩枝干
 - 证据：loop/runs/20261007-211022/、loop/runs/20261007-210948/overview.png（远景垂柳）、night.png
 - 剩余缺口：更多日常人物（丫鬟、婆子）；元宵夜船灯；冬雪场景（第四十九回）
+
+## iter 9 — 2026-10-07 21:45
+- 目标：第四十九回"琉璃世界白雪红梅"——雪景时辰；红梅不覆雪；冬季隐去蝴蝶、落花、荷叶
+- 改动：新增 snow.js（共享 uSnow，按世界法线朝上程度把屋面、地面、山石、树冠混合为雪色；树叶 0.55、枝干 0.7、红梅 0 覆雪）、飘雪粒子随相机；main.js 新增"雪"时辰；dynamics.js 冬季隐藏蝴蝶与落花；loop/config.json 新增 snow_longcui 视角，time 改用名称（避免插入新时辰后序号错位）；README 加雪景两图
+- 证据：loop/runs/20261007-214037/（snow_longcui.png）、docs/images/snow.jpg、snow_plum.jpg
+- 指标：fps 55.7/59.9，errors 0（33 视角）
+- 剩余缺口：芦雪广"四面都是芦苇掩覆"雪中芦花；池面结冰；更多日常人物；元宵船灯
