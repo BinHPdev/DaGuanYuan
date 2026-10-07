@@ -173,6 +173,7 @@ function batch(root) {
 scene.remove(placesRoot);
 const lanternSpots = [];
 let snowfall = null, lotusGroup = null, boatGlow = null;
+const figures = [];
 const batched = batch(placesRoot);
 scene.add(batched);
 const interiorsReady = placeInteriorModels(placesRoot, scene);
@@ -428,6 +429,11 @@ function tick() {
   for (const [t, v] of animatedTextures) t.offset.y -= v * dt; // flowing water strips
   updateDynamics(dt, now / 1000);
   if (snowfall.visible) snowfall.userData.update(dt, now / 1000, camera);
+  for (const f of figures) {
+    const t = now / 1000 + f.ph;
+    f.o.scale.y = f.s0 * (1 + 0.012 * Math.sin(t * 1.6));            // breathing
+    f.o.rotation.y = f.o.userData.baseRot + (f.sweep ? 0.28 * Math.sin(t * 2.2) : 0.04 * Math.sin(t * 0.4));
+  }
   if (flight) {
     flight.t += dt / flight.dur;
     const k = flight.t >= 1 ? 1 : 0.5 - 0.5 * Math.cos(Math.PI * flight.t);
@@ -464,5 +470,8 @@ addEventListener('resize', () => {
   bloomPass.setSize(innerWidth / 2, innerHeight / 2);
 });
 tick();
-propsReady.then(() => { renderer.shadowMap.needsUpdate = true; snowifyScene(scene); const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
+propsReady.then((g) => { renderer.shadowMap.needsUpdate = true; snowifyScene(scene);
+  // figures breathe and shift a little; the sweeping maid swings her broom
+  const FIG = ['baoyu_read', 'daiyu_read', 'daiyu_burial', 'baochai_fan', 'jiamu', 'liulaolao', 'yahuan_sweep', 'yahuan_tray'];
+  g?.children?.forEach((o, i) => { if (FIG.includes(o.userData.model)) figures.push({ o, ph: i * 1.7, sweep: o.userData.model === 'yahuan_sweep', y0: o.position.y, s0: o.scale.y }); }); const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
 window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime: setTime, setQuality, setTimeByName: (n) => setTime(Math.max(0, TIMES.findIndex((t) => t.name === n))), orbit, showCard, get flight() { return flight; } };

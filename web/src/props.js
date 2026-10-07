@@ -49,6 +49,8 @@ export async function placeProps(slots, parent) {
     obj.position.set(s.x, s.y - (s.floating ? 0 : 0.1), s.z);
     obj.rotation.y = (s.rot || 0) - Math.PI / 2; // Tripo meshes face +x; turn them to face +z
     obj.userData.place = s.place;
+    obj.userData.model = s.model;
+    obj.userData.baseRot = obj.rotation.y;
     group.add(obj);
   }));
   return group;

@@ -155,6 +155,8 @@ B.xiaoxiang = (p, g, lv) => {
   const main = A.hall({ w: 10, d: 6, h: 3.3, bays: 3, roofType: 'juanpeng', colMat: MAT.columnGreen, latticeMat: MAT.latticeGreen, plaque: p.plaque, couplet: p.couplet,
     hangMat: MAT.hangLatticeGreen, sillMat: MAT.wall, paint: 'su', lattice: 'binglie', tone: 'green' });
   furnish('xiaoxiang', main, { w: 10, d: 6, h: 3.3, platform: 0.6 });
+  // 第十七回贾政：'若能月夜坐此窗下读书，不枉虚生一世' — 黛玉 reads by the window
+  addProp(p, 'daiyu_read', 0.7, -3.6, 1.3, 0.2, (levels.xiaoxiang ?? heightAt(p.x, p.z)) + 0.6);
   main.position.z = -3; g.add(collide(main));
   // 曲折游廊 from gate to hall
   g.add(A.corridor([[-1.5, d / 2 - 2], [-6, 9], [-6, 3], [-4, 1.2]], { colMat: MAT.columnGreen }));
@@ -535,8 +537,8 @@ B.luxue = (p, g) => {
   // 第四十九回：丫鬟婆子正在那里扫雪开径
   addProp(p, 'yahuan_sweep', -5, 8.5, 1.55, 0.6);
   g.add(A.fence([[-9, 6], [9, 6], [9, -5]], { mat: MAT.wood }));
-  flora.push({ type: 'reed', x: p.x, z: p.z - 7, n: 260, r: 12 });
-  flora.push({ type: 'reed', x: p.x + 10, z: p.z - 14, n: 160, r: 9 });
+  // 四面都是芦苇掩覆，一条去径逶迤穿芦度苇过去，便是藕香榭的竹桥了
+  for (const [dx, dz, n, r] of [[0, -8, 220, 12], [10, -15, 140, 9], [-13, 0, 140, 7], [13, 2, 130, 7], [-8, 9, 100, 6], [9, 10, 100, 6]]) flora.push({ type: 'reed', x: p.x + dx, z: p.z + dz, n, r });
   label(p, 8);
 };
 

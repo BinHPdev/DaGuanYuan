@@ -171,13 +171,25 @@ export function leafTexture(kind) {
       g.stroke();
     }
   } else if (kind === 'reed') {
-    for (let i = 0; i < 30; i++) {
-      const x = 5 + Math.random() * 118;
-      g.strokeStyle = `hsl(${45 + Math.random() * 15},35%,${50 + Math.random() * 15}%)`;
-      g.lineWidth = 1.5;
-      g.beginPath(); g.moveTo(x, 128); g.quadraticCurveTo(x + 4, 60, x + (Math.random() - 0.5) * 16, 20); g.stroke();
-      g.fillStyle = 'rgba(235,225,205,0.9)';
-      g.beginPath(); g.ellipse(x + (Math.random() - 0.5) * 10, 18 + Math.random() * 10, 3, 10, 0.2, 0, Math.PI * 2); g.fill();
+    // 芦苇: slender stems, ribbon leaves, and feathery plumes made of fine hair-strokes (no solid blobs)
+    for (let i = 0; i < 16; i++) {
+      const x = 8 + Math.random() * 112, top = 8 + Math.random() * 30, lean = (Math.random() - 0.5) * 14;
+      g.strokeStyle = `hsl(${48 + Math.random() * 12},${30 + Math.random() * 15}%,${45 + Math.random() * 15}%)`;
+      g.lineWidth = 1.1;
+      g.beginPath(); g.moveTo(x, 128); g.quadraticCurveTo(x + lean * 0.3, 70, x + lean, top + 16); g.stroke();
+      // a couple of narrow leaves
+      for (let k = 0; k < 2; k++) {
+        const ly = 70 + Math.random() * 40, dir = Math.random() < 0.5 ? -1 : 1;
+        g.beginPath(); g.moveTo(x + lean * 0.2, ly); g.quadraticCurveTo(x + dir * 10, ly - 12, x + dir * 18, ly - 4); g.stroke();
+      }
+      // plume: a fan of fine hairs drooping to one side
+      for (let h = 0; h < 22; h++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.3) * 1.1, len = 6 + Math.random() * 12;
+        g.strokeStyle = `rgba(${225 + Math.random() * 25},${215 + Math.random() * 25},${195 + Math.random() * 30},${0.75 + Math.random() * 0.25})`;
+        g.lineWidth = 0.7;
+        const sx = x + lean + (Math.random() - 0.5) * 3, sy = top + 16 - Math.random() * 14;
+        g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + Math.cos(a) * len * 0.6 + lean * 0.15, sy + Math.sin(a) * len * 0.5 + len * 0.4); g.stroke();
+      }
     }
   } else if (kind === 'banana') {
     g.fillStyle = '#4f8a2e';

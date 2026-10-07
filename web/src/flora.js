@@ -411,7 +411,8 @@ export function buildFlora(requests, exclusions) {
   }
   if (buckets.bamboo) group.add(...bambooMeshes(buckets.bamboo));
   if (buckets.banana) group.add(cardMesh(buckets.banana, 'banana'));
-  if (buckets.reed) group.add(cardMesh(buckets.reed, 'reed'));
+  // 芦苇: in snow the plumes frost over on every face (荻芦夜雪)
+  if (buckets.reed) { const rm = cardMesh(buckets.reed, 'reed'); rm.userData.snowAmt = 0.6; rm.userData.snowAll = true; group.add(rm); }
   if (buckets.lotus) { const lm = lotusMeshes(buckets.lotus); lm.forEach((o) => (o.userData.lotus = true)); group.add(...lm); }
   if (buckets.petals) group.add(discMesh(buckets.petals, '#f3b6c2', 0.12, WIND.petals));
   return group;
@@ -462,7 +463,7 @@ function cardMesh(mats, kind) {
     }
     geo = mergeGeometries(parts);
   } else {
-    geo = mergeGeometries([new THREE.PlaneGeometry(1.6, 2.4).translate(0, 1.2, 0), new THREE.PlaneGeometry(1.6, 2.4).rotateY(Math.PI / 2).translate(0, 1.2, 0)]);
+    geo = mergeGeometries([new THREE.PlaneGeometry(1.4, 2.6).translate(0, 1.3, 0), new THREE.PlaneGeometry(1.4, 2.6).rotateY(Math.PI / 3).translate(0, 1.3, 0), new THREE.PlaneGeometry(1.4, 2.6).rotateY(-Math.PI / 3).translate(0, 1.3, 0)]);
   }
   const im = new THREE.InstancedMesh(geo, windify(new THREE.MeshStandardMaterial({ map: kind === 'banana' ? bananaLeafTexture() : leafTexture(kind), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.65 }), WIND[kind]), mats.length);
   mats.forEach((m, i) => im.setMatrixAt(i, m));

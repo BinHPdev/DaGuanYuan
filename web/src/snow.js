@@ -6,7 +6,7 @@ export const snowUniform = { value: 0 };
 
 // Patch a material so that upward-facing fragments blend toward snow. amount scales coverage
 // (foliage holds less snow; red plum blossoms none, so 红梅 stays vivid against the white).
-export function snowify(mat, amount = 1) {
+export function snowify(mat, amount = 1, allFaces = false) {
   if (!mat || mat.userData.snowPatched || !(mat.isMeshStandardMaterial || mat.isMeshLambertMaterial || mat.isMeshPhongMaterial)) return;
   mat.userData.snowPatched = true;
   const prev = mat.onBeforeCompile, prevKey = mat.customProgramCacheKey?.bind(mat);
@@ -14,6 +14,7 @@ export function snowify(mat, amount = 1) {
     prev?.call(mat, sh, r);
     sh.uniforms.uSnow = snowUniform;
     sh.uniforms.uSnowAmt = { value: amount };
+    sh.uniforms.uSnowAll = { value: allFaces ? 1 : 0 };
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying float vSnowUp;')
       .replace('#include <defaultnormal_vertex>', `#include <defaultnormal_vertex>
@@ -25,15 +26,15 @@ export function snowify(mat, amount = 1) {
           vSnowUp = normalize(mat3(modelMatrix) * sn).y;
         }`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vSnowUp;\nuniform float uSnow, uSnowAmt;')
+      .replace('#include <common>', '#include <common>\nvarying float vSnowUp;\nuniform float uSnow, uSnowAmt, uSnowAll;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         {
           float up = gl_FrontFacing ? vSnowUp : -vSnowUp;
-          float cover = uSnow * uSnowAmt * smoothstep(0.25, 0.75, up);
+          float cover = uSnow * uSnowAmt * max(smoothstep(0.25, 0.75, up), uSnowAll);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.94, 0.97), clamp(cover, 0.0, 1.0));
         }`);
   };
-  mat.customProgramCacheKey = () => (prevKey ? prevKey() : '') + '|snow' + amount;
+  mat.customProgramCacheKey = () => (prevKey ? prevKey() : '') + '|snow' + amount + (allFaces ? 'a' : '');
   mat.needsUpdate = true;
 }
 
@@ -42,7 +43,7 @@ export function snowifyScene(root) {
   root.traverse((o) => {
     if (!o.isMesh || o.userData.noSnow) return;
     const mats = Array.isArray(o.material) ? o.material : [o.material];
-    for (const m of mats) snowify(m, o.userData.snowAmt ?? m.userData.snowAmt ?? 1);
+    for (const m of mats) snowify(m, o.userData.snowAmt ?? m.userData.snowAmt ?? 1, !!o.userData.snowAll);
   });
 }
 
