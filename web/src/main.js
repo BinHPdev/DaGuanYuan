@@ -388,4 +388,4 @@ addEventListener('resize', () => {
 });
 tick();
 propsReady.then(() => { const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
-window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime: setTime, orbit, showCard, get flight() { return flight; } };
+window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime: setTime, setTimeByName: (n) => setTime(Math.max(0, TIMES.findIndex((t) => t.name === n))), orbit, showCard, get flight() { return flight; } };

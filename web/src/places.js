@@ -269,16 +269,16 @@ B.zhengdian = (p, g) => {
   }
   const ramp = new THREE.Mesh(new THREE.BoxGeometry(5, 0.7, 3), MAT.marble); ramp.position.set(0, 0.35, 21.5); g.add(ramp);
   // 正殿 · 顾恩思义 — seven bays, 斗拱, green glazed tiles
-  const hallMain = A.hall({ w: 26, d: 12, h: 5.2, bays: 7, roofType: 'xieshan', roofMat: MAT.tileGreen, dougong: true,
+  const hallMain = A.hall({ w: 26, d: 12, h: 5.2, bays: 7, roofType: 'xieshan', roofMat: MAT.tile, dougong: true,
     platform: 1.4, platMat: MAT.marble, plaque: '顧恩思義', plaqueOpts: { width: 4.4 }, lanterns: 'palace', roofH: 5.2,
     couplet: ['天地啟宏慈赤子蒼頭同感戴', '古今垂曠典九州萬國被恩榮'] });
   hallMain.position.z = 0; g.add(collide(hallMain));
   // 大观楼 behind, flanked by 缀锦阁 (east) and 含芳阁 (west)
-  const main = A.lou({ w: 22, d: 10, h1: 4.6, h2: 4.0, bays: 7, roofType: 'xieshan', roofMat: MAT.tileGreen, plaque: '大觀樓' });
+  const main = A.lou({ w: 22, d: 10, h1: 4.6, h2: 4.0, bays: 7, roofType: 'xieshan', roofMat: MAT.tile, plaque: '大觀樓' });
   main.position.set(0, 0, -22); g.add(collide(main));
-  const east = A.lou({ w: 10, d: 7, h1: 3.8, h2: 3.4, bays: 3, roofType: 'xieshan', roofMat: MAT.tileGreen, plaque: '綴錦閣' });
+  const east = A.lou({ w: 10, d: 7, h1: 3.8, h2: 3.4, bays: 3, roofType: 'xieshan', roofMat: MAT.tile, plaque: '綴錦閣' });
   east.position.set(25, 0, -16); east.rotation.y = -Math.PI / 2; g.add(collide(east));
-  const west = A.lou({ w: 10, d: 7, h1: 3.8, h2: 3.4, bays: 3, roofType: 'xieshan', roofMat: MAT.tileGreen, plaque: '含芳閣' });
+  const west = A.lou({ w: 10, d: 7, h1: 3.8, h2: 3.4, bays: 3, roofType: 'xieshan', roofMat: MAT.tile, plaque: '含芳閣' });
   west.position.set(-25, 0, -16); west.rotation.y = Math.PI / 2; g.add(collide(west));
   // 复道萦纡: corridors tie hall, tower and side pavilions together
   g.add(A.corridor([[-13.5, -2], [-21, -2], [-21, -11]]));
@@ -289,7 +289,7 @@ B.zhengdian = (p, g) => {
   g.add(A.corridor([[17, 8], [26, 8], [26, 22], [12, 24]]));
   // 东西配殿
   for (const sx of [-1, 1]) {
-    const side = A.hall({ w: 12, d: 6, h: 3.8, bays: 3, roofType: 'xieshan', roofMat: MAT.tileGreen, lanterns: 'palace' });
+    const side = A.hall({ w: 12, d: 6, h: 3.8, bays: 3, roofType: 'xieshan', roofMat: MAT.tile, lanterns: 'palace' });
     side.position.set(sx * 31, 0, 14); side.rotation.y = -sx * Math.PI / 2; g.add(collide(side));
   }
   addProp(p, 'ding', 0, 27, 2.6, 0);
@@ -306,6 +306,9 @@ B.zhengdian = (p, g) => {
 B.paifang = (p, g) => {
   addProp(p, 'paifang', 0, 0, 9.5, 0);
   const pl = A.addPlaque(g, '省親別墅', { y: 6.1, z: 0.65, width: 3.1, bg: '#1d3a5a' }); // 元妃命将'天仙宝境'换作'省亲别墅'（第十八回）
+  // 次额与背面额依北京大观园(1987 剧组所建)牌坊：正面'芳岸''玉津'，背面'国恩家庆''云影''波光'（research/refs.md）
+  for (const [t, x] of [['芳岸', -3.3], ['玉津', 3.3]]) A.addPlaque(g, t, { y: 4.7, z: 0.6, x, width: 1.4, bg: '#1d3a5a' });
+  for (const [t, x, w] of [['國恩家慶', 0, 3.1], ['雲影', 3.3, 1.4], ['波光', -3.3, 1.4]]) A.addPlaque(g, t, { y: x ? 4.7 : 6.1, z: -0.65, x, width: w, bg: '#1d3a5a' }).rotation.y = Math.PI;
   pl.userData.paifangPlaque = true;
   label(p, 13);
 };

@@ -377,8 +377,9 @@ export function hall({
   const r = roof(W + oh * 2, D + oh * 2, rH, roofType, roofMat, { overhang: oh, detail: !rustic && roofType !== 'thatch' });
   r.position.y = top + dgH;
   g.add(r);
-  if (lanterns && !rustic) for (const sx of [-1, 1]) {
-    const l = lantern(lanterns); l.position.set(sx * bw * (bays > 1 ? 1 : 0.42), beamY - bh / 2 - 0.7, D / 2 + 0.55); g.add(l);
+  if (lanterns && !rustic) for (let i = 0; i < bays; i++) { // one gauze lantern per bay under the eave
+    if (bays === 1 && i) break;
+    const l = lantern(lanterns); l.position.set(-w / 2 + (i + 0.5) * bw, beamY - bh / 2 - 0.75, D / 2 + 0.6); g.add(l);
   }
   if (plaque) addPlaque(g, plaque, { y: beamY - bh / 2 - 0.62, z: D / 2 + 0.25, width: Math.min(bw * 0.95, 0.75 * [...plaque].length + 0.6), ...plaqueOpts });
   if (couplet) addCouplet(g, couplet, { y: y0, h: wh, x: bw / 2 * (bays > 1 ? 1 : 0.6), z: D / 2 + colR + 0.04 });
@@ -540,7 +541,7 @@ export function moonGate({ w = 6, h = 3, r = 1.3, t = 0.5, mat = MAT.wall } = {}
 }
 
 // 游廊: covered corridor along a polyline.
-export function corridor(points, { w = 2.4, h = 2.8, colMat = MAT.column, roofMat = MAT.tile } = {}) {
+export function corridor(points, { w = 2.4, h = 2.8, colMat = MAT.columnGreen, roofMat = MAT.tile } = {}) {  // 绿柱灰顶的回廊 (86 版北京大观园)
   const g = new THREE.Group();
   for (let i = 0; i < points.length - 1; i++) {
     const [x0, z0] = points[i], [x1, z1] = points[i + 1];
