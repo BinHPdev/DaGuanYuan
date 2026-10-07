@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>大观园</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap">
+<style>
+/* Layout: full-bleed 3D garden; xuan-paper panels float at the edges like mounted scroll labels. */
+:root {
+  --paper: #f1ebdd;        /* 宣纸 */
+  --paper-2: #e5dcc8;
+  --ink: #1f2420;          /* 墨 */
+  --ink-soft: #5a5a50;
+  --cinnabar: #9b3a2a;     /* 朱砂, used for seals and the active state */
+  --azurite: #2c5862;      /* 石青 */
+  --line: rgba(31, 36, 32, 0.18);
+  --shadow: 0 6px 24px rgba(20, 22, 18, 0.18);
+  --f-display: "Ma Shan Zheng", "STXingkai", "Kaiti SC", "KaiTi", serif;
+  --f-body: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --f-ui: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1e2220; --paper-2: #2a2f2b; --ink: #ece4d2; --ink-soft: #a9a392;
+    --cinnabar: #d0644f; --azurite: #7fb0b6; --line: rgba(236, 228, 210, 0.16);
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.45); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #1e2220; --paper-2: #2a2f2b; --ink: #ece4d2; --ink-soft: #a9a392;
+  --cinnabar: #d0644f; --azurite: #7fb0b6; --line: rgba(236, 228, 210, 0.16);
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.45); color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); overflow: hidden; }
+#app { position: fixed; inset: 0; }
+canvas.gl { display: block; width: 100%; height: 100%; touch-action: none; }
+
+.panel { background: color-mix(in srgb, var(--paper) 92%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 3px; backdrop-filter: blur(6px); }
+
+#title { position: absolute; left: 16px; top: calc(16px + env(safe-area-inset-top, 0px)); padding: 10px 16px 10px 14px; display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px); }
+#title .seal { width: 40px; height: 40px; flex: none; background: var(--cinnabar); color: var(--paper); font-family: var(--f-display); font-size: 17px; line-height: 18px; display: grid; place-items: center; text-align: center; border-radius: 2px; padding: 2px; }
+#title h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 30px; line-height: 1; letter-spacing: 0.08em; }
+#title p { margin: 4px 0 0; font-size: 12px; color: var(--ink-soft); }
+
+#tools { position: absolute; right: 16px; top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 60%; }
+#tools button, .btn { font: 14px var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--line); padding: 7px 12px; border-radius: 3px; cursor: pointer; box-shadow: var(--shadow); }
+#tools button[aria-pressed="true"], .btn.primary { background: var(--cinnabar); color: var(--paper); border-color: var(--cinnabar); }
+button:focus-visible { outline: 2px solid var(--azurite); outline-offset: 2px; }
+
+#card { position: absolute; right: 16px; top: calc(70px + env(safe-area-inset-top, 0px)); width: min(360px, calc(100% - 32px)); max-height: calc(100% - 300px); overflow: auto; padding: 16px 18px; }
+#card h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 28px; letter-spacing: 0.04em; text-wrap: balance; }
+#card .meta { font: 12px var(--f-ui); color: var(--ink-soft); margin-top: 4px; letter-spacing: 0.04em; }
+#card .plaque { display: inline-block; margin-top: 10px; padding: 4px 10px; background: #1d2b3a; color: #d8b25a; font-family: var(--f-display); font-size: 18px; letter-spacing: 0.2em; border: 2px solid #b38b45; }
+#card .couplet { margin-top: 8px; font-size: 14px; color: var(--azurite); }
+#card blockquote { margin: 12px 0 0; padding: 0 0 0 12px; border-left: 2px solid var(--cinnabar); font-size: 15px; line-height: 1.85; }
+#card .note { margin-top: 10px; font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
+#card .close { position: absolute; right: 8px; top: 6px; border: 0; background: none; font-size: 20px; color: var(--ink-soft); cursor: pointer; }
+
+#tour { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(640px, calc(100% - 32px)); padding: 14px 16px; }
+#tour .row { display: flex; align-items: center; gap: 10px; }
+#tour .step { font: 12px var(--f-ui); color: var(--cinnabar); letter-spacing: 0.1em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#tour h3 { margin: 0; flex: 1; min-width: 0; font-family: var(--f-display); font-weight: 400; font-size: 22px; }
+#tour p { margin: 8px 0 0; font-size: 14px; line-height: 1.8; max-height: 7.2em; overflow: auto; }
+#tour .btns { display: flex; gap: 6px; }
+
+#minimap { position: absolute; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: 216px; height: 180px; padding: 6px; }
+#minimap canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+#hint { position: absolute; left: 248px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); font: 12px var(--f-ui); color: #f4efe2; text-shadow: 0 1px 3px rgba(0,0,0,0.7); max-width: 300px; line-height: 1.6; }
+#labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.lbl { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; cursor: pointer; font-family: var(--f-body); font-size: 13px; color: #1f2420; background: rgba(241, 235, 221, 0.9); border: 1px solid rgba(155, 58, 42, 0.6); padding: 2px 8px; border-radius: 2px; white-space: nowrap; }
+.lbl small { color: #9b3a2a; margin-left: 4px; }
+#walkpad { position: absolute; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: repeat(3, 48px); gap: 6px; }
+#walkpad button { height: 48px; font-size: 18px; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; background: var(--paper); font-family: var(--f-display); font-size: 28px; color: var(--ink); z-index: 10; transition: opacity 0.6s; }
+#about { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,0.35); z-index: 5; padding: 16px; }
+#about .panel { max-width: 600px; max-height: 80%; overflow: auto; padding: 20px 24px; font-size: 14px; line-height: 1.8; }
+#about h2 { font-family: var(--f-display); font-weight: 400; font-size: 26px; margin: 0 0 8px; }
+#about a { color: var(--azurite); }
+@media (max-width: 720px) {
+  #title h1 { font-size: 24px; } #title p { display: none; }
+  #tools { top: calc(74px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px; max-width: none; justify-content: flex-start; }
+  #tools button { padding: 6px 9px; font-size: 13px; }
+  #card { top: auto; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-height: 46%; }
+  #minimap { width: 132px; height: 110px; bottom: auto; top: calc(124px + env(safe-area-inset-top, 0px)); }
+  #hint { display: none; }
+  #tour p { max-height: 5.4em; }
+}
+@media (prefers-reduced-motion: reduce) { #loading { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="labels"></div>
+  <header id="title" class="panel">
+    <div class="seal" aria-hidden="true">紅<br>樓</div>
+    <div><h1>大觀園</h1><p>依《红楼梦》第十七回游园路线复原 · 二十三处景致</p></div>
+  </header>
+  <nav id="tools" aria-label="视图">
+    <button id="b-orbit" aria-pressed="true">鸟瞰</button>
+    <button id="b-walk" aria-pressed="false">漫步</button>
+    <button id="b-tour" aria-pressed="false">贾政游园</button>
+    <button id="b-labels" aria-pressed="true">标注</button>
+    <button id="b-time">时辰：昼</button>
+    <button id="b-about">考据</button>
+  </nav>
+  <aside id="card" class="panel" hidden></aside>
+  <section id="tour" class="panel" hidden>
+    <div class="row"><span class="step" id="t-step"></span><h3 id="t-name"></h3>
+      <div class="btns"><button class="btn" id="t-prev" aria-label="上一站">‹</button><button class="btn primary" id="t-play">自动</button><button class="btn" id="t-next" aria-label="下一站">›</button></div></div>
+    <p id="t-quote"></p>
+  </section>
+  <div id="minimap" class="panel"><canvas id="mm" width="432" height="360" aria-label="大观园平面小地图"></canvas></div>
+  <div id="hint">拖动旋转 · 滚轮缩放 · 点击景点看原文</div>
+  <div id="walkpad" hidden>
+    <span></span><button class="btn" data-k="KeyW" aria-label="前进">▲</button><span></span>
+    <button class="btn" data-k="KeyA" aria-label="左移">◀</button><button class="btn" data-k="KeyS" aria-label="后退">▼</button><button class="btn" data-k="KeyD" aria-label="右移">▶</button>
+  </div>
+  <div id="about" hidden><div class="panel">
+    <h2>考据与说明</h2>
+    <p><b>布局</b>：以第十七回贾政率众游园的路线为骨架：正门（南）→ 翠嶂 → 沁芳亭 → 潇湘馆 → 稻香村 → 荼蘼架诸花处 → 蓼汀花溆 → 蘅芜苑 → 省亲别墅与玉石牌坊 → 沁芳闸 → 怡红院 → 绕山回到大门。水系依贾珍所言：“原从那闸起流至那洞口，从东北山坳里引到那村庄里，又开一道岔口，引到西南上，共总流到这里，仍旧合在一处，从那墙下出去。”秋爽斋、藕香榭、芦雪广、栊翠庵、凸碧山庄、凹晶溪馆依第三十八、四十、四十九、五十、七十五、七十六回的方位描写补入。大致方位参考了戴志昂、杨乃济等的复原平面图。原著前后描写互有出入，此处只是一种复原方案，并非定论。</p>
+    <p><b>建筑</b>：程序化生成的清式构件，包括卷棚、歇山、硬山、攒尖、茅檐屋顶，以及游廊、粉墙虎皮石、月洞门、折带朱栏板桥。匾额文字一律从左往右书写，方便今天的读者。</p>
+    <p><b>AI 模型</b>：翠嶂、大玲珑山石、玉石牌坊、石狮、棠木舫、石碣、香鼎、庭院山石共 8 件，先用 AI 生成概念图，再用 Tripo v2.5 image-to-3D 生成模型。</p>
+    <p><b>配色参考</b>：1987 年央视版《红楼梦》剧照与北京大观园实景，只用作色彩和造型参考，场景中没有使用剧照。原文出自 <a href="https://zh.wikisource.org/wiki/%E7%B4%85%E6%A8%93%E5%A4%A2" target="_blank" rel="noopener">维基文库·红楼梦</a>。</p>
+    <p><button class="btn primary" id="about-close">回到园中</button></p>
+  </div></div>
+  <div id="loading">園中掃徑……</div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
