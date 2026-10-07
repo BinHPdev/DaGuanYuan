@@ -1,6 +1,7 @@
 // Height field for the garden: hills, the 沁芳 stream network, the central pond, stone paths.
 import * as THREE from 'three';
 import L from './layout.json';
+import { flagstoneTexture } from './textures.js';
 
 export const GROUND = 0.9; // ground level above the water surface (y = 0)
 const WATER_BED = -1.6;
@@ -72,6 +73,8 @@ export function buildTerrain() {
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   const col = new Float32Array(pos.count * 3);
+  const mask = new Float32Array(pos.count * 3); // x: stone path, y: wet bank, z: moss
+  const dry = new THREE.Color('#9c9a58'), lush = new THREE.Color('#577a33');
   const c = new THREE.Color();
   const grass = new THREE.Color('#6d8a3e'), grass2 = new THREE.Color('#87a050'), moss = new THREE.Color('#4f6b34');
   const path = new THREE.Color('#bdb5a2'), bank = new THREE.Color('#8f8a7b'), rockC = new THREE.Color('#9d998e');
@@ -83,6 +86,11 @@ export function buildTerrain() {
     pos.setY(i, y);
     const n = noise(x * 0.9, z * 0.9);
     c.copy(grass).lerp(grass2, 0.5 + 0.5 * n).lerp(moss, Math.max(0, -n) * 0.4);
+    // larger-scale meadow variation: dry yellowish patches and lush dark patches
+    const n2 = noise(x * 0.23 + 40, z * 0.23 - 17), n3 = noise(x * 2.7 - 9, z * 2.7 + 5);
+    if (n2 > 0.35) c.lerp(dry, Math.min(0.45, (n2 - 0.35) * 1.2));
+    if (n2 < -0.3) c.lerp(lush, Math.min(0.5, (-0.3 - n2) * 1.4));
+    c.multiplyScalar(0.95 + n3 * 0.06);
     const inside = Math.abs(x) < L.bounds.x[1] && Math.abs(z) < L.bounds.z[1];
     if (!inside) c.copy(outside);
     const hillness = y - GROUND;
@@ -94,9 +102,14 @@ export function buildTerrain() {
     if (w > -2.2 && w < 1) c.lerp(bank, 0.75);
     let pd = Infinity; for (const p of L.paths) pd = Math.min(pd, polyDist(x, z, p));
     if (pd < 1.4) c.lerp(path, 1 - smooth(0.9, 1.4, pd));
+    mask[i * 3] = 1 - smooth(0.9, 1.6, pd);                       // flagstone path
+    mask[i * 3 + 1] = w > -3.5 && w < 1.5 ? (1 - smooth(-3.5, -0.5, -Math.abs(w + 0.5) - 0.5)) * 0 + smooth(-3.5, -0.6, w) : 0; // wet band toward the water
+    const dWall = Math.min(L.bounds.x[1] - Math.abs(x), L.bounds.z[1] - Math.abs(z));
+    mask[i * 3 + 2] = inside ? (1 - smooth(0.5, 3.5, dWall)) * (0.6 + 0.4 * n) + (hillness > 2 ? smooth(2, 6, hillness) * 0.4 * (0.5 + 0.5 * n3) : 0) : 0;
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setAttribute('aMask', new THREE.BufferAttribute(mask, 3));
   geo.computeVertexNormals();
   // fine grass/soil detail multiplied over the vertex colours so the ground stops reading as clay
   const c2 = document.createElement('canvas'); c2.width = c2.height = 256;
@@ -110,7 +123,23 @@ export function buildTerrain() {
   const detail = new THREE.CanvasTexture(c2);
   detail.wrapS = detail.wrapT = THREE.RepeatWrapping; detail.repeat.set(W / 6, D / 6); detail.anisotropy = 8;
   detail.colorSpace = THREE.SRGBColorSpace;
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: detail, roughness: 0.95 }));
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: detail, roughness: 0.95 });
+  const flag = flagstoneTexture();
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uFlag = { value: flag };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec3 aMask; varying vec3 vMask; varying vec2 vTW;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMask = aMask; vTW = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform sampler2D uFlag; varying vec3 vMask; varying vec2 vTW;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        vec3 flagC = texture2D(uFlag, vTW * 0.42).rgb;
+        diffuseColor.rgb = mix(diffuseColor.rgb, flagC * 0.95, smoothstep(0.15, 0.85, vMask.x));
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.55, 0.6, 0.58), vMask.y * 0.85);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.16, 0.24, 0.1), vMask.z * 0.55);`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.32, vMask.y * 0.9);');
+  };
+  const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   mesh.name = 'terrain';
   return mesh;

@@ -13,6 +13,7 @@ import { buildWater } from './water.js';
 import { registerFlats, buildPlaces, flora, props, labels, collectColliders } from './places.js';
 import { buildFlora } from './flora.js';
 import { placeProps } from './props.js';
+import { placeInteriorModels } from './interiors.js';
 import { initDynamics, updateDynamics } from './dynamics.js';
 import { waterDepthMetric } from './terrain.js';
 import { buildBridges, buildBankRocks, buildLanternField, buildGlow } from './details.js';
@@ -62,7 +63,7 @@ scene.add(sun, sun.target);
 scene.fog = new THREE.Fog('#cfd8d6', 260, 900);
 
 const TIMES = [
-  { name: '昼', elev: 48, az: 150, sun: '#fff3dd', int: 2.4, hemi: 0.9, fog: '#cdd9dc', top: '#6f9cc4', hor: '#d6e2e4', glow: '#fff4d6', exp: 0.85 },
+  { name: '昼', elev: 48, az: 150, sun: '#fff3dd', int: 2.6, hemi: 1.0, fog: '#cdd9dc', top: '#6f9cc4', hor: '#d6e2e4', glow: '#fff4d6', exp: 1.05 },
   { name: '暮', elev: 7, az: 240, sun: '#ffb071', int: 1.8, hemi: 0.5, fog: '#d9b49a', top: '#5a6f9a', hor: '#f0b88a', glow: '#ffcf8a', exp: 0.85 },
   { name: '元宵', elev: 30, az: 60, sun: '#8ea6d6', int: 0.5, hemi: 0.3, fog: '#1a1f2c', top: '#070b18', hor: '#2a2236', glow: '#000000', exp: 0.75, night: true, yuanxiao: true },
   { name: '月夜', elev: 38, az: 120, sun: '#a9c0ea', int: 0.7, hemi: 0.22, fog: '#1d2633', top: '#0b1226', hor: '#24304a', glow: '#000000', exp: 0.7, night: true },
@@ -139,7 +140,8 @@ function batch(root) {
     if (o.userData.keepSeparate) { keep.push(o); return; }
     let g = o.geometry.clone().applyMatrix4(o.matrixWorld);
     if (g.index) g = g.toNonIndexed();
-    for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+    const keepAttrs = o.material.vertexColors ? ['position', 'normal', 'uv', 'color'] : ['position', 'normal', 'uv'];
+    for (const k of Object.keys(g.attributes)) if (!keepAttrs.includes(k)) g.deleteAttribute(k);
     if (!g.attributes.normal) g.computeVertexNormals();
     if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
     g.clearGroups();
@@ -158,6 +160,7 @@ scene.remove(placesRoot);
 const lanternSpots = [];
 const batched = batch(placesRoot);
 scene.add(batched);
+const interiorsReady = placeInteriorModels(placesRoot, scene);
 lanternField = buildLanternField();
 fieldGlow = buildGlow(lanternField.points, 3.4);
 buildingGlow = buildGlow(lanternSpots, 4.5);
@@ -295,10 +298,11 @@ const lblEls = labels.map((l) => {
 const tmpV = new THREE.Vector3();
 function updateLabels() {
   if (!showLabels) return;
+  const eyeLevel = camera.position.y - heightAt(camera.position.x, camera.position.z) < 8; // near the ground labels would show through walls
   for (const { el, pos } of lblEls) {
     tmpV.copy(pos).project(camera);
     const dist = camera.position.distanceTo(pos);
-    const vis = tmpV.z < 1 && Math.abs(tmpV.x) < 1.05 && Math.abs(tmpV.y) < 1.05 && dist < (mode === 'walk' ? 120 : 900);
+    const vis = tmpV.z < 1 && Math.abs(tmpV.x) < 1.05 && Math.abs(tmpV.y) < 1.05 && dist < (mode === 'walk' || eyeLevel ? 45 : 900);
     el.hidden = !vis;
     if (vis) { el.style.left = ((tmpV.x + 1) / 2) * innerWidth + 'px'; el.style.top = ((1 - tmpV.y) / 2) * innerHeight + 'px'; el.style.opacity = dist > 420 ? 0.75 : 1; }
   }
@@ -374,7 +378,7 @@ const composer = new EffectComposer(renderer, rt);
 composer.addPass(new RenderPass(scene, camera));
 const aoPass = new GTAOPass(scene, camera, innerWidth, innerHeight);
 aoPass.updateGtaoMaterial({ radius: 1.6, distanceExponent: 1.5, thickness: 2.0, scale: 1.1, samples: 12 });
-aoPass.blendIntensity = 0.85;
+aoPass.blendIntensity = 0.6;
 composer.addPass(aoPass);
 bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.85);
 bloomPass.enabled = false;

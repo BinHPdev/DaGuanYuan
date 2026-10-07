@@ -33,10 +33,11 @@ export function windify(mat, params) {
     uAmp: { value: params.amp }, uH: { value: params.h }, uFreq: { value: params.freq },
     uDroop: { value: params.droop || 0 }, uBob: { value: params.bob || 0 },
   };
+  const hang = !!params.hangAttr;
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, floraUniforms, u);
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uTime, uWind, uAmp, uH, uFreq, uDroop, uBob;')
+      .replace('#include <common>', '#include <common>\nuniform float uTime, uWind, uAmp, uH, uFreq, uDroop, uBob;' + (hang ? '\nattribute float aHang;' : ''))
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         #ifdef USE_INSTANCING
           vec3 wIp = instanceMatrix[3].xyz;
@@ -53,9 +54,15 @@ export function windify(mat, params) {
         float wHang = smoothstep(uH * 0.85, uH * 0.25, transformed.y) * step(0.001, uDroop);
         transformed.x += uDroop * wHang * sin(uTime * uFreq * 1.4 + wPh + transformed.y * 0.9) * wGust * uWind;
         transformed.z += uDroop * 0.6 * wHang * cos(uTime * uFreq * 1.1 + wPh + transformed.y * 0.7) * wGust * uWind;
-        transformed.y += uBob * sin(uTime * 1.1 + wPh * 3.0);`);
+        transformed.y += uBob * sin(uTime * 1.1 + wPh * 3.0);` + (hang ? `
+        // 柳条: each strand swings like a pendulum chain — amplitude and lag grow toward its tip
+        float hk = aHang * aHang;
+        float hw = sin(uTime * uFreq * 1.3 + wPh + aHang * 1.8 + position.x * 0.7) * 0.75 + sin(uTime * uFreq * 2.7 + wPh * 1.3 + aHang * 3.1) * 0.25;
+        transformed.x += uDroop * 1.6 * hk * hw * wGust * uWind;
+        transformed.z += uDroop * 1.1 * hk * cos(uTime * uFreq * 1.05 + wPh + aHang * 2.2 + position.z * 0.6) * wGust * uWind;
+        transformed.y += uDroop * 0.25 * hk * abs(hw) * wGust;` : ''));
   };
-  mat.customProgramCacheKey = () => 'flora-wind';
+  mat.customProgramCacheKey = () => 'flora-wind' + (hang ? '-hang' : '');
   return mat;
 }
 
@@ -128,6 +135,8 @@ function limb(x0, y0, z0, x1, y1, z1, r, color) {
 
 // Species: trunk, canopy lobes [r, colour, x, y, z, sy], card texture. Solid cores keep crowns from looking hollow.
 const SPEC = {
+  // 蘅芜苑异草: trailing leafy masses with 实若丹砂 berries and 花如金桂 clusters (cards, not balls)
+  vines: { t: [0.05, 0.02, '#3d4a2a'], lobes: [[0.75, '#3f6a2e', 0, 0.35, 0, 0.55], [0.55, '#4f7a36', 0.45, 0.25, 0.2, 0.5], [0.22, '#b3322b', -0.3, 0.45, 0.25, 0.6], [0.2, '#d4ad38', 0.25, 0.5, -0.3, 0.6]], tex: 'leaf', n: 26, size: 1.1 },
   willow: { t: [3.2, 0.3, '#4e3d2c', 0.12], lobes: [[2.6, '#a9c25a', -0.3, 4.4, 0, 0.9], [2.0, '#9db84f', 1.3, 3.8, 0.6, 0.9], [1.9, '#b3c968', -1.3, 3.7, -0.8, 0.9]], tex: 'willow', hang: true, n: 46, size: 1.0 },
   pear: { t: [2.6, 0.22], lobes: [[1.8, '#f4f1ea', 0, 3.6, 0], [1.4, '#eef0e4', 1, 3.1, 0.6], [1.3, '#f7f5ef', -0.9, 3.3, -0.5]], tex: 'blossom' },
   haitang: { t: [2.4, 0.25], lobes: [[2.4, '#d9677a', 0, 3.6, 0, 0.8], [1.8, '#e58b97', 1.5, 3.3, 0.4, 0.8], [1.8, '#c95466', -1.4, 3.2, -0.6, 0.8], [1.2, '#6f9a45', 0, 2.6, 1.2]], tex: 'blossom' },
@@ -152,7 +161,7 @@ function treeTemplate(sp) {
   return { solid: mergeGeometries(solid), cards: mergeGeometries(leaf), tex: sp.tex };
 }
 const SPECIES = {
-  vines: () => mergeGeometries([blob(0.6, '#3f6f2e', 0, 0.3, 0, 0.7), blob(0.35, '#b9302c', 0.4, 0.5, 0.2, 1), blob(0.4, '#d6b73c', -0.35, 0.45, -0.2, 1)]),
+  // vines handled as a SPEC entry below (leaf cards)
   crops: () => mergeGeometries([blob(0.35, '#86a83e', 0, 0.2, 0, 0.8), blob(0.25, '#e3d14a', 0.3, 0.25, 0, 0.8)]),
   tumi: () => blob(0.35, '#faf6ea', 0, 0, 0, 0.6),
   muxiang: () => blob(0.35, '#f3e7b2', 0, 0, 0, 0.6),
@@ -160,6 +169,104 @@ const SPECIES = {
   shaoyao: () => mergeGeometries([blob(0.3, '#5d8a3a', 0, 0.25, 0), blob(0.2, '#f08aa5', 0, 0.55, 0, 0.7)]),
   rose: () => mergeGeometries([blob(0.45, '#4d7a32', 0, 0.45, 0), blob(0.16, '#d02a3f', 0.25, 0.8, 0.1), blob(0.16, '#f06f86', -0.2, 0.75, -0.15)]),
 };
+
+// ---------------------------------------------------------------- 垂柳
+// Strand texture: a thin reddish-green twig with alternate lanceolate spring leaves (柳芽).
+let STRAND_TEX = null;
+function strandTexture() {
+  if (STRAND_TEX) return STRAND_TEX;
+  const c = document.createElement('canvas'); c.width = 64; c.height = 512;
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, 64, 512);
+  g.strokeStyle = '#7d6b3a'; g.lineWidth = 1.6;
+  g.beginPath(); g.moveTo(32, 0); for (let y = 0; y <= 512; y += 16) g.lineTo(32 + Math.sin(y * 0.02) * 1.5, y); g.stroke();
+  for (let y = 4; y < 512; y += 6) {
+    const side = (y / 6) % 2 < 1 ? -1 : 1, len = 22 + Math.random() * 10, ang = side * (0.45 + Math.random() * 0.4);
+    const x0 = 32 + Math.sin(y * 0.02) * 1.5;
+    g.save(); g.translate(x0, y); g.rotate(ang);
+    const hue = 68 + Math.random() * 18, lit = 48 + Math.random() * 16;
+    g.fillStyle = `hsl(${hue},${55 + Math.random() * 20}%,${lit}%)`;
+    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(side * 4.5, len * 0.45, 0, len); g.quadraticCurveTo(-side * 2.2, len * 0.5, 0, 0); g.fill();
+    g.strokeStyle = `hsla(${hue},40%,${lit + 15}%,0.6)`; g.lineWidth = 0.6; g.beginPath(); g.moveTo(0, 0); g.lineTo(side * 0.6, len * 0.9); g.stroke();
+    g.restore();
+  }
+  STRAND_TEX = new THREE.CanvasTexture(c);
+  STRAND_TEX.colorSpace = THREE.SRGBColorSpace;
+  STRAND_TEX.wrapT = THREE.RepeatWrapping; STRAND_TEX.anisotropy = 8;
+  return STRAND_TEX;
+}
+
+// Gnarled trunk: a tapered, bent, lumpy cylinder.
+function gnarledTrunk(h, r, bark, lean) {
+  const g = new THREE.CylinderGeometry(r * 0.62, r, h, 9, 10); g.deleteAttribute('uv');
+  const p = g.attributes.position, salt = rnd() * 10;
+  for (let i = 0; i < p.count; i++) {
+    let x = p.getX(i), y = p.getY(i) + h / 2, z = p.getZ(i);
+    const t = y / h, ang = Math.atan2(z, x);
+    const bump = 1 + 0.16 * Math.sin(ang * 3 + t * 7 + salt) + 0.1 * Math.sin(ang * 5 - t * 11);
+    x *= bump; z *= bump;
+    x += Math.sin(t * 2.4 + salt) * h * 0.06 + lean * y * y / h; z += Math.cos(t * 1.9 + salt) * h * 0.05;
+    p.setXYZ(i, x, y, z);
+  }
+  g.computeVertexNormals();
+  return colored(g, bark);
+}
+
+function willowTemplate() {
+  const H = 3.0 + rnd() * 0.4, lean = 0.12;
+  const solid = [gnarledTrunk(H, 0.34, '#4a3a2a', lean)];
+  const top = [lean * H, H, 0];
+  // main limbs arching up and out (the "head" of a pollarded garden willow)
+  const tips = [];
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 5) * Math.PI * 2 + rnd() * 0.6, R = 1.6 + rnd() * 1.2, y = H + 1.6 + rnd() * 1.4;
+    const mid = [top[0] + Math.cos(a) * R * 0.45, H + 1.3 + rnd() * 0.6, Math.sin(a) * R * 0.45];
+    const tip = [top[0] + Math.cos(a) * R, y, Math.sin(a) * R];
+    solid.push(limb(top[0], H - 0.2, top[2], mid[0], mid[1], mid[2], 0.17, '#4a3a2a'));
+    solid.push(limb(mid[0], mid[1], mid[2], tip[0], tip[1], tip[2], 0.1, '#55432f'));
+    tips.push(tip);
+  }
+  // hanging strands (柳条), hundreds of them from the crown dome
+  const pos = [], uv = [], col = [], hangA = [], idx = [];
+  const Rc = 3.3, domeY = H + 2.4, SEG = 6, base = new THREE.Color('#b9cf6a');
+  const NS = 440;
+  for (let s = 0; s < NS; s++) {
+    const th = rnd() * Math.PI * 2, rr = Math.sqrt(rnd()) * Rc;
+    const ax = top[0] + Math.cos(th) * rr, az = Math.sin(th) * rr;
+    const ay = domeY + 1.0 * (1 - (rr / Rc) ** 2) - rnd() * 0.5;
+    const L = (ay - 0.4) * (0.55 + rnd() * 0.42) * (rr / Rc * 0.4 + 0.6);
+    const out = 0.35 + rnd() * 0.4, w = 0.3 + rnd() * 0.06; // ribbon 0.3 m ↔ 64 px, so leaves keep their true ~10 cm shape
+    const yaw = rnd() * Math.PI, sx = Math.cos(yaw) * w / 2, sz = Math.sin(yaw) * w / 2;
+    const tint = 0.85 + rnd() * 0.3, hueShift = rnd();
+    const c = base.clone().offsetHSL((hueShift - 0.5) * 0.04, 0, (rnd() - 0.5) * 0.08).multiplyScalar(tint);
+    const v0 = pos.length / 3;
+    for (let k = 0; k <= SEG; k++) {
+      const t = k / SEG;
+      // arc outward a little at the top, then fall almost straight down
+      const bul = out * Math.sin(Math.min(1, t * 2.2) * Math.PI / 2) * (1 - 0.3 * t);
+      const x = ax + Math.cos(th) * bul, z = az + Math.sin(th) * bul, y = ay - L * t - 0.25 * Math.sin(t * Math.PI) * 0;
+      pos.push(x - sx, y, z - sz, x + sx, y, z + sz);
+      uv.push(0, t * L / 2.4, 1, t * L / 2.4);
+      for (let q = 0; q < 2; q++) col.push(c.r, c.g, c.b);
+      hangA.push(t, t);
+      if (k) { const a = v0 + (k - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    }
+  }
+  const cards = new THREE.BufferGeometry();
+  cards.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  cards.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  cards.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  cards.setAttribute('aHang', new THREE.Float32BufferAttribute(hangA, 1));
+  cards.setIndex(idx);
+  // normals pointing outward from the crown axis, so the curtain is lit like foliage
+  const nrm = new Float32Array(pos.length);
+  for (let i = 0; i < pos.length; i += 3) {
+    const dx = pos[i] - top[0], dz = pos[i + 2], l = Math.hypot(dx, dz) || 1;
+    nrm[i] = dx / l * 0.8; nrm[i + 1] = 0.45; nrm[i + 2] = dz / l * 0.8;
+  }
+  cards.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+  return { solid: mergeGeometries(solid), cards, strand: true };
+}
 
 const LAND_TREE = new Set(['willow', 'pear', 'haitang', 'peach', 'apricot', 'plum', 'pine', 'wutong', 'mulberry', 'osmanthus', 'generic']);
 
@@ -268,7 +375,21 @@ export function buildFlora(requests, exclusions) {
   const vcBase = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
   const cardTex = {};
   for (const [type, mats] of Object.entries(buckets)) {
-    if (SPEC[type]) {
+    if (type === 'willow') {
+      // two template variants so neighbouring willows differ
+      const half = [mats.filter((_, i) => i % 2 === 0), mats.filter((_, i) => i % 2 === 1)];
+      for (const part of half) {
+        if (!part.length) continue;
+        const tpl = willowTemplate();
+        const sm = new THREE.InstancedMesh(tpl.solid, windify(vcBase.clone(), { ...WIND.willow, droop: 0, amp: 0.05 }), part.length);
+        const cm = new THREE.InstancedMesh(tpl.cards, windify(new THREE.MeshStandardMaterial({
+          vertexColors: true, map: strandTexture(), alphaTest: 0.18, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 0.85,
+        }), { ...WIND.willow, hangAttr: true }), part.length);
+        part.forEach((m, i) => { sm.setMatrixAt(i, m); cm.setMatrixAt(i, m); });
+        sm.castShadow = cm.castShadow = true; sm.receiveShadow = cm.receiveShadow = true;
+        group.add(sm, cm);
+      }
+    } else if (SPEC[type]) {
       const tpl = treeTemplate(SPEC[type]);
       const sm = new THREE.InstancedMesh(tpl.solid, windify(vcBase.clone(), WIND[type]), mats.length);
       const cm = new THREE.InstancedMesh(tpl.cards, windify(new THREE.MeshStandardMaterial({
@@ -289,7 +410,7 @@ export function buildFlora(requests, exclusions) {
   if (buckets.bamboo) group.add(...bambooMeshes(buckets.bamboo));
   if (buckets.banana) group.add(cardMesh(buckets.banana, 'banana'));
   if (buckets.reed) group.add(cardMesh(buckets.reed, 'reed'));
-  if (buckets.lotus) group.add(discMesh(buckets.lotus, '#4f7f3a', 0.9, WIND.lotus));
+  if (buckets.lotus) group.add(...lotusMeshes(buckets.lotus));
   if (buckets.petals) group.add(discMesh(buckets.petals, '#f3b6c2', 0.12, WIND.petals));
   return group;
 }
@@ -335,4 +456,84 @@ function discMesh(mats, color, r, wind) {
   mats.forEach((m, i) => im.setMatrixAt(i, m));
   im.renderOrder = 2;
   return im;
+}
+
+// ---------------------------------------------------------------- 荷叶
+// Cupped lotus leaves with radiating veins and a notch; a share stand above the water on stalks
+// (出水荷叶), and a few pink buds.
+function lotusTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const gr = g.createRadialGradient(128, 128, 4, 128, 128, 126);
+  gr.addColorStop(0, '#9fb86a'); gr.addColorStop(0.25, '#6e9447'); gr.addColorStop(0.85, '#4e7a36'); gr.addColorStop(1, '#3f6a2e');
+  g.fillStyle = gr; g.beginPath(); g.arc(128, 128, 126, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(200,220,150,0.55)'; g.lineWidth = 1.6;
+  for (let k = 0; k < 22; k++) {
+    const a = (k / 22) * Math.PI * 2;
+    g.beginPath(); g.moveTo(128, 128);
+    const mx = 128 + Math.cos(a + 0.05) * 70, my = 128 + Math.sin(a + 0.05) * 70;
+    g.quadraticCurveTo(mx, my, 128 + Math.cos(a) * 124, 128 + Math.sin(a) * 124); g.stroke();
+  }
+  g.fillStyle = 'rgba(160,190,110,0.8)'; g.beginPath(); g.arc(128, 128, 6, 0, 7); g.fill();
+  // waxy sheen speckle
+  for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.06})`; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+function lotusLeafGeo(cup) {
+  // polar disc with a narrow notch, centre lowered (cup) and rim slightly raised/wavy
+  const NR = 6, NA = 28, notch = 0.22, pos = [], uv = [], idx = [];
+  for (let i = 0; i <= NR; i++) {
+    const r = i / NR;
+    for (let j = 0; j <= NA; j++) {
+      const a = notch / 2 + (j / NA) * (Math.PI * 2 - notch);
+      const y = cup * (r * r) + 0.02 * Math.sin(a * 7) * r * r;
+      pos.push(Math.cos(a) * r, y, Math.sin(a) * r);
+      uv.push(0.5 + Math.cos(a) * r * 0.49, 0.5 + Math.sin(a) * r * 0.49);
+    }
+  }
+  for (let i = 0; i < NR; i++) for (let j = 0; j < NA; j++) {
+    const k = i * (NA + 1) + j;
+    idx.push(k, k + NA + 1, k + 1, k + 1, k + NA + 1, k + NA + 2);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+function lotusMeshes(mats) {
+  const tex = lotusTexture();
+  const leafMat = windify(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45, side: THREE.DoubleSide }), WIND.lotus);
+  const floatM = [], standM = [], stalkM = [], budM = [];
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), P = new THREE.Vector3(), S = new THREE.Vector3(), E = new THREE.Euler();
+  for (const m of mats) {
+    m.decompose(P, Q, S);
+    const r = 0.45 * S.x / 0.6;
+    if (rnd() < 0.22) {
+      // 出水荷叶: on a stalk, tilted
+      const h = 0.5 + rnd() * 0.9;
+      E.set((rnd() - 0.5) * 0.7, rnd() * 6.28, (rnd() - 0.5) * 0.7);
+      standM.push(new THREE.Matrix4().compose(new THREE.Vector3(P.x, h, P.z), new THREE.Quaternion().setFromEuler(E), new THREE.Vector3(r * 1.2, r * 1.2, r * 1.2)));
+      stalkM.push(new THREE.Matrix4().compose(new THREE.Vector3(P.x, h / 2 - 0.2, P.z), new THREE.Quaternion(), new THREE.Vector3(1, h + 0.4, 1)));
+      if (rnd() < 0.25) budM.push(new THREE.Matrix4().compose(new THREE.Vector3(P.x + 0.4, h * 0.9 + 0.2, P.z + 0.3), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1)));
+    } else {
+      E.set(0, rnd() * 6.28, 0);
+      floatM.push(new THREE.Matrix4().compose(new THREE.Vector3(P.x, 0.03, P.z), new THREE.Quaternion().setFromEuler(E), new THREE.Vector3(r, r, r)));
+    }
+  }
+  const out = [];
+  const mk = (geo, mat, list, order) => {
+    if (!list.length) return;
+    const im = new THREE.InstancedMesh(geo, mat, list.length);
+    list.forEach((mm, i) => im.setMatrixAt(i, mm));
+    im.renderOrder = order; im.castShadow = order === 0; im.receiveShadow = true;
+    out.push(im);
+  };
+  mk(lotusLeafGeo(0.06), leafMat, floatM, 2);
+  mk(lotusLeafGeo(0.16), leafMat, standM, 0);
+  mk(new THREE.CylinderGeometry(0.015, 0.02, 1, 5).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ color: '#5f7d3a' }), stalkM.map((m) => m.clone().multiply(new THREE.Matrix4().makeTranslation(0, -0.5, 0))), 0);
+  const bud = new THREE.SphereGeometry(0.09, 10, 8).scale(1, 1.7, 1);
+  mk(bud, new THREE.MeshStandardMaterial({ color: '#e98aa0', roughness: 0.5 }), budM, 0);
+  return out;
 }

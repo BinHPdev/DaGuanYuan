@@ -2,6 +2,7 @@
 // (two-phase flow-map technique), foam where the 沁芳 stream runs fast, sun glint.
 import * as THREE from 'three';
 import L from './layout.json';
+import { waterDepthMetric } from './terrain.js';
 
 // ---------------------------------------------------------------- flow field
 // Covers the 420×360 water plane. RG = flow direction·speed (0..1 → -1..1), B = foam mask.
@@ -88,7 +89,11 @@ function flowTexture() {
     data[p * 4] = Math.round(THREE.MathUtils.clamp(field[p * 3] * 0.5 + 0.5, 0, 1) * 255);
     data[p * 4 + 1] = Math.round(THREE.MathUtils.clamp(field[p * 3 + 1] * 0.5 + 0.5, 0, 1) * 255);
     data[p * 4 + 2] = Math.round(THREE.MathUtils.clamp(field[p * 3 + 2], 0, 1) * 255);
-    data[p * 4 + 3] = 255;
+  }
+  // A = distance from the bank (0 at the shoreline → 1 at ≥ 8 m), for depth colour and transparency
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) {
+    const x = FX0 + ((i + 0.5) / NX) * FW, z = FZ0 + ((j + 0.5) / NZ) * FD;
+    data[(j * NX + i) * 4 + 3] = Math.round(THREE.MathUtils.clamp(waterDepthMetric(x, z) / 8, 0, 1) * 255);
   }
   const t = new THREE.DataTexture(data, NX, NZ, THREE.RGBAFormat);
   t.magFilter = t.minFilter = THREE.LinearFilter;
@@ -171,11 +176,23 @@ export function buildWater(sunDir) {
         vec3 n = normalize(vec3(-g.x, 1.0, -g.y));
         vec3 v = normalize(cameraPosition - vWorld);
         float fres = pow(1.0 - max(dot(n, v), 0.0), 4.0);
-        vec3 base = mix(uDeep, uShallow, 0.35 + 0.25 * sin(p.x * 0.05) * sin(p.y * 0.04) + 0.15 * speed);
+        // depth: shallow, warm and clear near the banks; deep green-black in the middle
+        float depth = fl.a;
+        vec3 shallowC = vec3(0.36, 0.42, 0.30), midC = uShallow * 0.75, deepC = uDeep * 0.62;
+        vec3 base = mix(shallowC, midC, smoothstep(0.0, 0.25, depth));
+        base = mix(base, deepC, smoothstep(0.25, 0.9, depth));
+        base *= 0.92 + 0.12 * sin(p.x * 0.05) * sin(p.y * 0.04) + 0.1 * speed;
         vec3 sky = mix(uSky, vec3(0.92), uSnow * 0.5);
-        vec3 col = mix(base, sky, 0.15 + 0.75 * fres);
+        // fake reflection of the planted banks: the near-shore band mirrors dark foliage
+        vec3 bankRefl = mix(vec3(0.16, 0.22, 0.12), sky * 0.6, smoothstep(0.05, 0.45, depth));
+        vec3 refl = mix(bankRefl, sky, smoothstep(0.0, 0.6, v.y * 0.0 + depth));
+        vec3 col = mix(base, refl, 0.06 + 0.62 * fres);
         vec3 h = normalize(normalize(uSun) + v);
-        col += vec3(1.0, 0.95, 0.85) * pow(max(dot(n, h), 0.0), 220.0) * 1.4;
+        col += vec3(1.0, 0.95, 0.85) * pow(max(dot(n, h), 0.0), 800.0) * 0.35;
+        // wet shoreline band with soft lapping foam
+        float shore = 1.0 - smoothstep(0.0, 0.05, depth);
+        float lap = smoothstep(0.55, 0.95, hgt(p * 1.3 + vec2(uTime * 0.25, -uTime * 0.18)));
+        col = mix(col, vec3(0.82, 0.86, 0.82), shore * lap * 0.45);
 
         // foam: advected noise, streaky where the current is fast, white water at the sluice & cave
         float f0 = hgt(q0 * vec2(0.9, 0.9) * 1.4), f1 = hgt(q1 * 1.26);
@@ -185,7 +202,7 @@ export function buildWater(sunDir) {
         float foam = clamp(streak + white * 1.3, 0.0, 1.0);
         vec3 foamCol = mix(vec3(0.9, 0.94, 0.93), sky, 0.25);
         col = mix(col, foamCol, foam * 0.85);
-        gl_FragColor = vec4(col, 0.72 + 0.25 * fres + foam * 0.2);
+        gl_FragColor = vec4(col, clamp(0.5 + 0.38 * smoothstep(0.0, 0.5, depth) + 0.3 * fres + foam * 0.2, 0.0, 0.97));
         #include <fog_fragment>
       }`,
   });
@@ -194,5 +211,8 @@ export function buildWater(sunDir) {
   mesh.position.y = 0;
   mesh.name = 'water';
   mesh.renderOrder = 1;
+  // no depth write: things just under the surface (koi, lotus stems) are drawn after the water
+  // with their own underwater tint, so they read as seen through it
+  mat.depthWrite = false;
   return mesh;
 }

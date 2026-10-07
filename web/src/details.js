@@ -5,6 +5,7 @@ import L from './layout.json';
 import * as A from './arch.js';
 import { MAT } from './arch.js';
 import { heightAt, waterDepthMetric, polyDist } from './terrain.js';
+import { rockVariants, rockMaterial } from './rocks.js';
 
 let seed = 777;
 const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -44,44 +45,57 @@ export function buildBridges() {
   return g;
 }
 
-// Instanced rocks lining the water's edge (湖石驳岸) and scattered garden stones.
+// 湖石驳岸: a continuous stacked revetment of Taihu and yellow stones along every water edge,
+// big stones at the waterline (partly submerged), smaller ones stacked behind and above;
+// plus scattered garden stones. One InstancedMesh per stone variant (few draw calls).
 export function buildBankRocks() {
-  const geo = new THREE.IcosahedronGeometry(1, 1);
-  const p = geo.attributes.position;
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const h = Math.sin(x * 12.9 + y * 78.2 + z * 37.7) * 43758.5;
-    const k = 0.75 + (h - Math.floor(h)) * 0.45;
-    p.setXYZ(i, x * k, y * k * 0.7, z * k);
-  }
-  geo.computeVertexNormals();
-  const mats = [];
+  const variants = rockVariants(6, 'mixed', 16);
+  const buckets = variants.map(() => []);
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), S = new THREE.Vector3(), P = new THREE.Vector3(), E = new THREE.Euler();
-  const add = (x, z, s, y) => {
-    E.set(rnd() * 0.6, rnd() * Math.PI * 2, rnd() * 0.6); Q.setFromEuler(E);
-    S.set(s * (0.8 + rnd() * 0.6), s * (0.6 + rnd() * 0.7), s * (0.8 + rnd() * 0.6));
-    P.set(x, y ?? Math.max(heightAt(x, z), -0.2) + s * 0.15, z);
-    mats.push(M.compose(P, Q, S).clone());
+  const add = (x, z, s, y, flat = 0.7, vi) => {
+    const v = vi ?? Math.floor(rnd() * variants.length);
+    E.set((rnd() - 0.5) * 0.35, rnd() * Math.PI * 2, (rnd() - 0.5) * 0.35); Q.setFromEuler(E);
+    S.set(s * (0.85 + rnd() * 0.4), s * flat * (0.75 + rnd() * 0.5), s * (0.85 + rnd() * 0.4));
+    P.set(x, y, z);
+    buckets[v].push(M.compose(P, Q, S).clone());
   };
-  // walk the bank: sample points where the water metric crosses ~0
-  for (let x = -178; x <= 178; x += 1.6) for (let z = -148; z <= 148; z += 1.6) {
-    const w = waterDepthMetric(x, z);
-    if (w > -0.6 && w < 0.9 && rnd() < 0.55) add(x + (rnd() - 0.5) * 1.2, z + (rnd() - 0.5) * 1.2, 0.5 + rnd() * 0.8, 0.15 + rnd() * 0.3);
+  const skip = (x, z) => L.places.some((q) => (q.type === 'scene' || q.id === 'dicui') && Math.hypot(q.x - x, q.z - z) < 8)
+    || Math.hypot(x - 0, z - 76) < 15 || Math.hypot(x - 163, z + 126.5) < 9 || Math.hypot(x + 102, z + 74) < 9;
+  // waterline course: dense, overlapping, partly underwater
+  for (let x = -178; x <= 178; x += 1.25) for (let z = -148; z <= 148; z += 1.25) {
+    const jx = x + (rnd() - 0.5) * 0.9, jz = z + (rnd() - 0.5) * 0.9;
+    const w = waterDepthMetric(jx, jz);
+    if (w > -0.4 && w < 0.7 && !skip(jx, jz) && rnd() < 0.8) {
+      const s = 0.65 + rnd() * 0.75;
+      add(jx, jz, s, -0.55 - rnd() * 0.25 + (0.7 - w) * 0.15, 0.62);
+    } else if (w > -1.7 && w < -0.6 && !skip(jx, jz) && rnd() < 0.38) {
+      // second course stacked behind, on the bank lip
+      const s = 0.45 + rnd() * 0.5;
+      add(jx, jz, s, Math.max(heightAt(jx, jz), 0.2) - s * 0.25, 0.7);
+    }
   }
-  // scattered garden stones off the paths
-  for (let i = 0; i < 260; i++) {
+  // scattered garden stones off the paths: a few standing Taihu pieces among low ones
+  for (let i = 0; i < 300; i++) {
     const x = (rnd() * 2 - 1) * 172, z = (rnd() * 2 - 1) * 142;
     if (waterDepthMetric(x, z) > -2) continue;
     let near = Infinity; for (const pth of L.paths) near = Math.min(near, polyDist(x, z, pth));
     if (near < 2.5 || near > 9) continue;
-    if (L.places.some((q) => (q.type === 'scene' || q.id === 'dicui') && Math.hypot(q.x - x, q.z - z) < 8)) continue;
-    add(x, z, 0.4 + rnd() * 0.9);
+    if (skip(x, z)) continue;
+    const stand = rnd() < 0.25;
+    const s = stand ? 0.45 + rnd() * 0.4 : 0.35 + rnd() * 0.6;
+    add(x, z, s, heightAt(x, z) - 0.08, stand ? 1.6 + rnd() * 0.8 : 0.6, stand ? Math.floor(rnd() * 4) : undefined);
   }
-  const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: '#a8a597', roughness: 0.95 }), mats.length);
-  mats.forEach((m, i) => im.setMatrixAt(i, m));
-  im.castShadow = im.receiveShadow = true;
-  im.name = 'bankRocks';
-  return im;
+  const group = new THREE.Group(); group.name = 'bankRocks';
+  const mat = rockMaterial();
+  variants.forEach((geo, vi) => {
+    if (!buckets[vi].length) return;
+    const im = new THREE.InstancedMesh(geo, mat, buckets[vi].length);
+    buckets[vi].forEach((m, i) => im.setMatrixAt(i, m));
+    im.castShadow = false; im.receiveShadow = true; // ~1.2M tris: keep them out of the shadow pass
+    im.computeBoundingSphere();
+    group.add(im);
+  });
+  return group;
 }
 
 // 元宵 lanterns: wind lamps along the stream railings and lamps hung in the willows.

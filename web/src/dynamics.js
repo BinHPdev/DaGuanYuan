@@ -289,79 +289,236 @@ function butterflies() {
 }
 
 // ---------------------------------------------------------------- koi
-function koi(L) {
-  const N = 40;
-  const body = new THREE.SphereGeometry(1, 10, 6).scale(0.11, 0.06, 0.34);
-  const tail = new THREE.BufferGeometry();
-  tail.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -0.3, -0.13, 0, -0.52, 0.13, 0, -0.52], 3));
-  tail.computeVertexNormals();
-  body.deleteAttribute('uv');
-  const geo = new THREE.BufferGeometry();
-  {
-    const b = body.toNonIndexed(), tl = tail;
-    const pa = new Float32Array(b.attributes.position.count * 3 + 9);
-    pa.set(b.attributes.position.array); pa.set(tl.attributes.position.array, b.attributes.position.count * 3);
-    geo.setAttribute('position', new THREE.BufferAttribute(pa, 3));
-    geo.computeVertexNormals();
+// 锦鲤: lofted body with head, dorsal/pectoral/pelvic fins and a forked tail; eight variety
+// patterns in a texture atlas (红白、大正三色、昭和三色、山吹黄金、白金、浅黄、茶鲤、野鲤);
+// body undulation in the vertex shader; boids schooling kept inside deep water.
+const KOI_PATTERNS = 8;
+function koiAtlas() {
+  const W = 512, H = 128, c = document.createElement('canvas'); c.width = W; c.height = H * KOI_PATTERNS;
+  const g = c.getContext('2d');
+  const blob = (u, v, ru, rv, col, y0) => {
+    for (const du of [-1, 0, 1]) {
+      g.fillStyle = col; g.beginPath();
+      g.ellipse((u + du) * W * 0.94, y0 + v * H, ru * W, rv * H, 0, 0, Math.PI * 2); g.fill();
+    }
+  };
+  const R = Math.random;
+  for (let k = 0; k < KOI_PATTERNS; k++) {
+    const y0 = k * H;
+    const base = ['#f4f1ea', '#f2efe8', '#1e1c1c', '#e9b23a', '#e4e3df', '#7f93a4', '#8a6a44', '#5b5a3c'][k];
+    g.fillStyle = base; g.fillRect(0, y0, W, H);
+    g.save(); g.beginPath(); g.rect(0, y0, W * 0.94, H); g.clip();
+    // u: 0 = top of the back, 0.5 = belly; v: 0 = tail, 1 = nose
+    if (k === 0 || k === 1) { // 红白 / 大正三色: hi patches on the back
+      for (let i = 0; i < 4; i++) blob(R() < 0.5 ? R() * 0.12 : 1 - R() * 0.12, 0.2 + R() * 0.75, 0.08 + R() * 0.08, 0.1 + R() * 0.12, '#d8361c', y0);
+      if (k === 1) for (let i = 0; i < 9; i++) blob(R() < 0.5 ? R() * 0.2 : 1 - R() * 0.2, 0.15 + R() * 0.7, 0.02 + R() * 0.03, 0.03 + R() * 0.04, '#141212', y0);
+    } else if (k === 2) { // 昭和三色: black base, red and white wraps
+      for (let i = 0; i < 4; i++) blob(R(), R(), 0.1 + R() * 0.1, 0.12 + R() * 0.12, '#d23a1d', y0);
+      for (let i = 0; i < 4; i++) blob(0.3 + R() * 0.4, R(), 0.1, 0.12, '#f1ede4', y0);
+    } else if (k === 3 || k === 4) { // 山吹 / 白金 metallic sheen down the back
+      const gr = g.createLinearGradient(0, 0, W * 0.94, 0);
+      gr.addColorStop(0, 'rgba(255,255,255,0.5)'); gr.addColorStop(0.25, 'rgba(255,255,255,0)'); gr.addColorStop(0.75, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(255,255,255,0.5)');
+      g.fillStyle = gr; g.fillRect(0, y0, W, H);
+    } else if (k === 5) { // 浅黄: blue-grey netted back, red flanks
+      g.fillStyle = '#c8452a'; g.fillRect(W * 0.25, y0, W * 0.44, H);
+    }
+    // scales: a fine net over everything
+    g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 1;
+    for (let y = y0; y < y0 + H; y += 6) for (let x = (y / 6) % 2 ? 0 : 5; x < W; x += 10) { g.beginPath(); g.arc(x, y, 5, 0.2, Math.PI - 0.2); g.stroke(); }
+    // pale belly
+    const bel = g.createLinearGradient(0, 0, W * 0.94, 0);
+    bel.addColorStop(0.3, 'rgba(255,250,240,0)'); bel.addColorStop(0.5, 'rgba(255,250,240,0.55)'); bel.addColorStop(0.7, 'rgba(255,250,240,0)');
+    g.fillStyle = bel; g.fillRect(0, y0, W, H);
+    g.restore();
+    // fin strip (u > 0.95): translucent with rays
+    const fin = ['#f6eee0', '#f6eee0', '#2a2522', '#f0c050', '#eeeeea', '#c9b8a8', '#9a7a52', '#6a6a48'][k];
+    g.fillStyle = fin; g.fillRect(W * 0.95, y0, W * 0.05, H);
+    g.strokeStyle = 'rgba(0,0,0,0.18)'; for (let y = y0; y < y0 + H; y += 4) { g.beginPath(); g.moveTo(W * 0.95, y); g.lineTo(W, y + 2); g.stroke(); }
   }
-  const phase = new Float32Array(N); for (let i = 0; i < N; i++) phase[i] = Math.random() * 6.28;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+}
+
+function koiGeometry() {
+  // body: loft of ellipses along z (tail -0.5 → nose +0.5), unit length 1
+  const NZ = 22, NA = 14, pos = [], uv = [], idx = [];
+  const prof = (z) => { // half-width, half-height, centre y — narrow caudal peduncle, deep body, blunt rounded head
+    const t = z + 0.5; // 0 tail → 1 nose
+    const sh = t < 0.62 ? 0.22 + 0.78 * Math.pow(THREE.MathUtils.smoothstep(t, 0, 0.62), 0.75)
+      : Math.sqrt(Math.max(0.02, 1 - ((t - 0.62) / 0.38) ** 2));
+    return [0.1 * sh, 0.13 * sh * (t > 0.85 ? 0.95 : 1), 0.012 * Math.sin(t * Math.PI) - (t > 0.8 ? (t - 0.8) * 0.05 : 0)];
+  };
+  for (let i = 0; i <= NZ; i++) {
+    const z = -0.5 + i / NZ, [w, h, cy] = prof(z);
+    for (let j = 0; j <= NA; j++) {
+      const a = (j / NA) * Math.PI * 2;
+      pos.push(Math.sin(a) * w, cy + Math.cos(a) * h, z);
+      uv.push((j / NA) * 0.94, i / NZ);
+    }
+  }
+  for (let i = 0; i < NZ; i++) for (let j = 0; j < NA; j++) {
+    const k = i * (NA + 1) + j;
+    idx.push(k, k + NA + 1, k + 1, k + 1, k + NA + 1, k + NA + 2);
+  }
+  const body = new THREE.BufferGeometry();
+  body.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  body.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  body.setIndex(idx); body.computeVertexNormals();
+  // fins as small polygons mapped to the fin strip
+  const fins = [];
+  const fin = (pts) => { // pts: [[x,y,z],...] triangle fan from pts[0]
+    const g = new THREE.BufferGeometry(), p = [], u = [], ix = [];
+    pts.forEach(([x, y, z], i) => { p.push(x, y, z); u.push(0.955 + 0.04 * (i / (pts.length - 1)), (z + 0.5)); });
+    for (let i = 1; i < pts.length - 1; i++) ix.push(0, i, i + 1);
+    g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(u, 2));
+    g.setIndex(ix); g.computeVertexNormals(); fins.push(g);
+  };
+  // forked tail
+  fin([[0, 0.01, -0.46], [0, 0.11, -0.64], [0, 0.15, -0.74], [0, 0.07, -0.68], [0, 0.0, -0.62], [0, -0.07, -0.68], [0, -0.13, -0.74], [0, -0.1, -0.64]]);
+  // dorsal fin along the back
+  fin([[0, 0.12, 0.12], [0, 0.2, 0.05], [0, 0.19, -0.1], [0, 0.15, -0.25], [0, 0.07, -0.3], [0, 0.1, -0.1]]);
+  // pectoral fins behind the head, angled down and out
+  for (const s of [-1, 1]) fin([[s * 0.07, -0.06, 0.24], [s * 0.2, -0.12, 0.2], [s * 0.19, -0.12, 0.1], [s * 0.08, -0.08, 0.15]]);
+  // pelvic fins
+  for (const s of [-1, 1]) fin([[s * 0.04, -0.1, -0.02], [s * 0.12, -0.16, -0.08], [s * 0.06, -0.12, -0.12]]);
+  // barbels (two tiny whiskers)
+  const geo = mergeGeoms([body, ...fins]);
+  return geo;
+}
+function mergeGeoms(list) {
+  let nv = 0, ni = 0; for (const g of list) { nv += g.attributes.position.count; ni += g.index.count; }
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), U = new Float32Array(nv * 2), I = new Uint32Array(ni);
+  let ov = 0, oi = 0;
+  for (const g of list) {
+    P.set(g.attributes.position.array, ov * 3); N.set(g.attributes.normal.array, ov * 3); U.set(g.attributes.uv.array, ov * 2);
+    const ix = g.index.array; for (let i = 0; i < ix.length; i++) I[oi + i] = ix[i] + ov;
+    ov += g.attributes.position.count; oi += ix.length;
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(P, 3)); out.setAttribute('normal', new THREE.BufferAttribute(N, 3)); out.setAttribute('uv', new THREE.BufferAttribute(U, 2));
+  out.setIndex(new THREE.BufferAttribute(I, 1));
+  return out;
+}
+
+function koi(L) {
+  const N = 52;
+  const geo = koiGeometry();
+  const phase = new Float32Array(N), pat = new Float32Array(N), beat = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    phase[i] = Math.random() * 6.28;
+    const r = Math.random();
+    pat[i] = r < 0.22 ? 0 : r < 0.36 ? 1 : r < 0.48 ? 2 : r < 0.6 ? 3 : r < 0.68 ? 4 : r < 0.76 ? 5 : r < 0.86 ? 6 : 7;
+    beat[i] = 1;
+  }
   geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phase, 1));
-  const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
+  geo.setAttribute('aPat', new THREE.InstancedBufferAttribute(pat, 1));
+  const beatAttr = new THREE.InstancedBufferAttribute(beat, 1); beatAttr.setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute('aBeat', beatAttr);
+  const mat = new THREE.MeshStandardMaterial({ map: koiAtlas(), roughness: 0.32, metalness: 0.05, side: THREE.DoubleSide, transparent: true, depthWrite: true });
   const uni = { uT: { value: 0 } };
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uT = uni.uT;
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uT; attribute float aPhase;')
+      .replace('#include <common>', `#include <common>
+        uniform float uT; attribute float aPhase; attribute float aPat; attribute float aBeat; varying float vKoiDepth;`)
+      .replace('#include <uv_vertex>', `#include <uv_vertex>
+        #ifdef USE_MAP
+          vMapUv = vec2(uv.x, (uv.y + aPat) / ${KOI_PATTERNS}.0);
+          vMapUv.y = 1.0 - vMapUv.y;
+        #endif`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-        transformed.x += sin(uT * 7.0 + aPhase + transformed.z * 6.0) * 0.07 * smoothstep(0.05, -0.5, transformed.z);`);
+        // travelling wave, stronger toward the tail; fins flutter
+        float kz = transformed.z;
+        float tailW = smoothstep(0.25, -0.75, kz);
+        float wv = sin(uT * 6.5 * aBeat + aPhase - kz * 7.0);
+        transformed.x += wv * 0.11 * tailW * tailW;
+        if (abs(transformed.x) > 0.11 && kz > -0.2) transformed.y += sin(uT * 9.0 + aPhase) * 0.02;
+        vec4 kw = instanceMatrix * vec4(transformed, 1.0);
+        vKoiDepth = -kw.y;`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vKoiDepth;')
+      .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+        // seen through the water: fade toward the water colour with depth
+        float kd = clamp(0.05 + vKoiDepth * 0.6, 0.0, 0.35);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.16, 0.30, 0.27), kd);`);
   };
+  mat.customProgramCacheKey = () => 'koi-v2';
   const im = new THREE.InstancedMesh(geo, mat, N);
   im.frustumCulled = false;
   im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  im.renderOrder = 2; // after the water surface (see water.js)
   C.scene.add(im);
+
   const pd = L.water.pond;
-  const COLS = ['#f2701e', '#f58a2a', '#ffffff', '#e2401c', '#f6c04a', '#f7f2e8'];
-  const col = new THREE.Color();
+  const deep = (x, z) => C.waterDepthMetric(x, z);
   const F = Array.from({ length: N }, (_, i) => {
-    im.setColorAt(i, col.set(pick(COLS)));
-    // keep each fish on an orbit that stays in deep water
-    let rf = rand(0.25, 0.82), cx = pd.cx + rand(-12, 12), cz = pd.cz + rand(-5, 5);
-    for (let k = 0; k < 12; k++) {
-      let ok = true;
-      for (let a = 0; a < 6.28; a += 0.5) if (C.waterDepthMetric(cx + pd.rx * rf * Math.cos(a), cz + pd.rz * rf * Math.sin(a)) < 2) { ok = false; break; }
-      if (ok) break; rf *= 0.85;
+    let x, z;
+    for (let k = 0; k < 40; k++) {
+      x = pd.cx + (Math.random() * 2 - 1) * pd.rx * 0.8; z = pd.cz + (Math.random() * 2 - 1) * pd.rz * 0.8;
+      if (deep(x, z) > 4) break;
     }
-    const school = i % 5; // loose schools share a phase offset
-    return { cx, cz, rf, a: rand(0, 6.28) + school * 0.05, w: (Math.random() < 0.5 ? -1 : 1) * rand(0.35, 0.7) / (pd.rx * rf), wob: rand(0, 6.28), rise: rand(4, 20), up: 0 };
+    const a = Math.random() * 6.28, sp = rand(0.25, 0.45);
+    return { x, z, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, len: rand(0.4, 0.8), school: i % 6, y: rand(-0.38, -0.14), rise: rand(5, 25), up: 0, wan: Math.random() * 100 };
   });
-  // surfacing rings
   const ringMat = new THREE.MeshBasicMaterial({ color: '#e8f0ee', transparent: true, opacity: 0.5, depthWrite: false });
   const rings = Array.from({ length: 6 }, () => {
     const m = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 32).rotateX(-Math.PI / 2), ringMat.clone());
     m.visible = false; m.position.y = 0.04; m.renderOrder = 4; m.userData.t = 0; C.scene.add(m); return m;
   });
-  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), V = new THREE.Vector3(), S = new THREE.Vector3(1, 1, 1);
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), V = new THREE.Vector3(), S = new THREE.Vector3();
   return {
     update(dt, t) {
       uni.uT.value = t;
+      dt = Math.min(dt, 0.05);
       for (let i = 0; i < N; i++) {
         const f = F[i];
-        f.a += f.w * dt;
-        const wob = Math.sin(t * 0.7 + f.wob) * 2.5;
-        const x = f.cx + (pd.rx * f.rf + wob) * Math.cos(f.a), z = f.cz + (pd.rz * f.rf + wob * 0.5) * Math.sin(f.a);
-        const tx = -Math.sin(f.a) * pd.rx * Math.sign(f.w), tz = Math.cos(f.a) * pd.rz * Math.sign(f.w);
+        let ax = 0, az = 0, cx = 0, cz = 0, avx = 0, avz = 0, n = 0;
+        for (let j = 0; j < N; j++) {
+          if (j === i) continue;
+          const o = F[j], dx = o.x - f.x, dz = o.z - f.z, d2 = dx * dx + dz * dz;
+          if (d2 < 0.8) { ax -= dx / (d2 + 0.05) * 0.25; az -= dz / (d2 + 0.05) * 0.25; }          // separation
+          if (o.school === f.school && d2 < 36) { cx += o.x; cz += o.z; avx += o.vx; avz += o.vz; n++; }
+        }
+        if (n) { ax += (cx / n - f.x) * 0.06 + (avx / n - f.vx) * 0.4; az += (cz / n - f.z) * 0.06 + (avz / n - f.vz) * 0.4; } // cohesion, alignment
+        // wander
+        f.wan += dt * 0.3;
+        ax += Math.sin(f.wan * 1.7 + i) * 0.12; az += Math.cos(f.wan * 1.3 + i * 2.1) * 0.12;
+        // shore avoidance: look ahead, steer toward deeper water
+        const sp = Math.hypot(f.vx, f.vz) || 1e-3;
+        const lx = f.x + f.vx / sp * 2.5, lz = f.z + f.vz / sp * 2.5;
+        const dl = deep(lx, lz);
+        if (dl < 3.5) {
+          const gx = deep(lx + 0.8, lz) - deep(lx - 0.8, lz), gz = deep(lx, lz + 0.8) - deep(lx, lz - 0.8);
+          const gl = Math.hypot(gx, gz) || 1, k = (3.5 - dl) * 0.9;
+          ax += gx / gl * k; az += gz / gl * k;
+        }
+        // avoid the 藕香榭 / 滴翠亭 / 紫菱洲 piles
+        for (const [ox, oz, r] of [[-26, -36, 9], [20, -16, 6], [52, -58, 10]]) {
+          const dx = f.x - ox, dz = f.z - oz, d = Math.hypot(dx, dz);
+          if (d < r) { ax += dx / d * (r - d) * 0.6; az += dz / d * (r - d) * 0.6; }
+        }
+        f.vx += ax * dt; f.vz += az * dt;
+        let v = Math.hypot(f.vx, f.vz);
+        const vmax = 0.6, vmin = 0.18;
+        if (v > vmax) { f.vx *= vmax / v; f.vz *= vmax / v; v = vmax; }
+        if (v < vmin) { f.vx *= vmin / (v || 1); f.vz *= vmin / (v || 1); v = vmin; }
+        f.x += f.vx * dt; f.z += f.vz * dt;
+        if (deep(f.x, f.z) < 0.8) { f.x -= f.vx * dt * 2; f.z -= f.vz * dt * 2; f.vx *= -0.5; f.vz *= -0.5; }
+        beatAttr.array[i] = 0.7 + v * 1.6;
         f.rise -= dt;
         if (f.rise <= 0) {
-          f.up = 1.2; f.rise = rand(8, 25);
+          f.up = 1.6; f.rise = rand(10, 30);
           const r = rings.find((m) => !m.visible);
-          if (r) { r.visible = true; r.userData.t = 0; r.position.x = x; r.position.z = z; }
+          if (r) { r.visible = true; r.userData.t = 0; r.position.x = f.x; r.position.z = f.z; }
         }
         f.up = Math.max(0, f.up - dt);
-        const y = -0.16 + Math.sin(Math.min(1, f.up / 1.2) * Math.PI) * 0.17;
-        Q.setFromEuler(E.set(0, Math.atan2(tx, tz), 0));
-        im.setMatrixAt(i, M.compose(V.set(x, y, z), Q, S));
+        const y = f.y + Math.sin(Math.min(1, f.up / 1.6) * Math.PI) * (-f.y - 0.04);
+        const heading = Math.atan2(f.vx, f.vz);
+        Q.setFromEuler(E.set(-Math.sin(Math.min(1, f.up / 1.6) * Math.PI) * 0.25, heading, 0));
+        im.setMatrixAt(i, M.compose(V.set(f.x, y, f.z), Q, S.setScalar(f.len)));
       }
       im.instanceMatrix.needsUpdate = true;
+      beatAttr.needsUpdate = true;
       for (const r of rings) {
         if (!r.visible) continue;
         r.userData.t += dt;
