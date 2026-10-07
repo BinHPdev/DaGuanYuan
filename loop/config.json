@@ -1,192 +1,1117 @@
 {
-  "version": 1,
-  "url": "http://localhost:5173/",
-  "viewport": { "width": 1440, "height": 900 },
-  "settleMs": 1200,
-  "fpsSampleMs": 2000,
-  "fpsBudget": 30,
-  "_coords": "x 向东，z 向南，y 向上；园界 x∈[-180,180] z∈[-150,150]；景点坐标见 web/src/layout.json。viewpoint 可用 {place, dist} 交给 __dgy.viewFor，或用 {pos:[x,y,z], target:[x,y,z]}。time 可写下标 (0 昼, 1 暮, 2 月夜) 或名称（若 __dgy.setTimeByName 存在，如 '元宵'）。",
-  "viewpoints": [
-    { "id": "overview", "label": "全园鸟瞰", "pos": [115, 150, 255], "target": [0, 0, 0], "spot": "global" },
-    { "id": "overview_n", "label": "自北向南鸟瞰", "pos": [-40, 120, -260], "target": [0, 0, 20], "spot": "global" },
-    { "id": "zhengmen_eye", "label": "正门·人眼高度（贾政秉正看门）", "pos": [0, 2.6, 172], "target": [0, 4, 148], "spot": "zhengmen" },
-    { "id": "zhengmen", "label": "正门", "place": "zhengmen", "dist": 34, "spot": "zhengmen" },
-    { "id": "cuizhang", "label": "翠嶂·曲径通幽", "pos": [6, 5, 142], "target": [0, 4, 122], "spot": "cuizhang" },
-    { "id": "qinfangting", "label": "沁芳亭·石桥三港", "place": "qinfangting", "dist": 26, "spot": "qinfangting" },
-    { "id": "qinfangting_eye", "label": "沁芳亭·桥头", "pos": [4, 3.2, 96], "target": [0, 4, 76], "spot": "qinfangting" },
-    { "id": "xiaoxiang", "label": "潇湘馆", "place": "xiaoxiang", "spot": "xiaoxiang" },
-    { "id": "xiaoxiang_in", "label": "潇湘馆·院内", "pos": [-52, 3.0, 70], "target": [-58, 3, 52], "spot": "xiaoxiang" },
-    { "id": "daoxiang", "label": "稻香村", "place": "daoxiang", "spot": "daoxiang" },
-    { "id": "huajing", "label": "荼蘼架·木香棚·牡丹亭", "place": "huajing", "dist": 40, "spot": "huajing" },
-    { "id": "liaoting", "label": "蓼汀花溆", "place": "liaoting", "dist": 30, "spot": "liaoting" },
-    { "id": "hengwu", "label": "蘅芜苑", "place": "hengwu", "spot": "hengwu" },
-    { "id": "hengwu_gate", "label": "蘅芜苑·入门即见大石", "pos": [-132, 3.0, -92], "target": [-132, 4, -110], "spot": "hengwu" },
-    { "id": "zhengdian", "label": "省亲别墅·大观楼", "place": "zhengdian", "dist": 70, "spot": "zhengdian" },
-    { "id": "zhengdian_front", "label": "正殿·月台正面", "pos": [10, 6, -66], "target": [10, 7, -116], "spot": "zhengdian" },
-    { "id": "paifang", "label": "玉石牌坊", "pos": [12, 4, -64], "target": [10, 5, -84], "spot": "paifang" },
-    { "id": "qinfangzha", "label": "沁芳闸", "place": "qinfangzha", "dist": 26, "spot": "qinfangzha" },
-    { "id": "yihong", "label": "怡红院", "place": "yihong", "spot": "yihong" },
-    { "id": "yihong_in", "label": "怡红院·院内蕉棠", "pos": [98, 3.0, 92], "target": [98, 3, 66], "spot": "yihong" },
-    { "id": "qiushuang", "label": "秋爽斋", "place": "qiushuang", "spot": "qiushuang" },
-    { "id": "ouxiang", "label": "藕香榭", "place": "ouxiang", "dist": 30, "spot": "ouxiang" },
-    { "id": "zhuijin", "label": "紫菱洲·缀锦楼", "place": "zhuijin", "dist": 32, "spot": "zhuijin" },
-    { "id": "longcui", "label": "栊翠庵", "place": "longcui", "dist": 34, "spot": "longcui" },
-    { "id": "tubi_aojing", "label": "凸碧山庄与凹晶溪馆", "pos": [-10, 26, -50], "target": [-45, 6, -82], "spot": "tubi" },
-    { "id": "luxue", "label": "芦雪广", "place": "luxue", "dist": 30, "spot": "luxue" },
-    { "id": "dusk", "label": "暮色全景", "pos": [-60, 60, 120], "target": [0, 0, -60], "time": 1, "spot": "global" },
-    { "id": "night", "label": "月夜（第七十六回）", "place": "xiaoxiang", "dist": 60, "time": 2, "spot": "global" },
-    { "id": "yuanxiao", "label": "元宵省亲灯景（第十八回，若已实现）", "pos": [-60, 40, 40], "target": [-20, 0, -40], "time": "元宵", "spot": "yuanxiao", "optional": true }
-  ],
-  "checklists": {
-    "global": [
-      { "id": "g-ridge", "text": "主要建筑屋脊有正吻/垂脊/走兽等脊饰，不是光秃方条", "weight": 3, "source": "refs.md 全局样式；ref02/ref04" },
-      { "id": "g-eave", "text": "檐口可见椽头（飞椽+檐椽）与瓦当滴水，红连檐+蓝绿椽头彩带", "weight": 3, "source": "refs.md 全局样式；ref02/ref05" },
-      { "id": "g-caihua", "text": "额枋有苏式彩画（青绿底、白底包袱山水、金线），不是纯色条带", "weight": 3, "source": "金线苏彩 visitbeijing；ref05/ref09" },
-      { "id": "g-guazi", "text": "柱间有倒挂楣子与雀替，游廊有坐凳楣子", "weight": 2, "source": "ref02/ref05/ref09" },
-      { "id": "g-door", "text": "隔扇门/槛窗分格清楚（棂心+裙板），明间开门", "weight": 2, "source": "ref02/ref11" },
-      { "id": "g-steps", "text": "台基有踏跺（台阶）与柱础", "weight": 2, "source": "ref04/ref11" },
-      { "id": "g-tile", "text": "全园灰筒瓦，无琉璃（含省亲别墅）", "weight": 2, "source": "北京：省亲别墅'不设琉璃'" },
-      { "id": "g-wall", "text": "白粉墙下碱青砖/虎皮石，墙顶筒瓦压顶，部分墙面有漏窗", "weight": 2, "source": "原著17；ref12" },
-      { "id": "g-plaques", "text": "所有题名处都有匾，近景可读，字序与原著一致", "weight": 3, "source": "原著17/18" },
-      { "id": "g-couplets", "text": "原著有楹联处（沁芳亭/潇湘馆/稻香村/蘅芜苑/顾恩思义殿/藕香榭/秋爽斋）挂联", "weight": 3, "source": "原著17/18/38/40" },
-      { "id": "g-lantern", "text": "檐下挂红纱灯笼（每开间一盏的节奏）", "weight": 1, "source": "ref02/ref09" },
-      { "id": "g-water-flow", "text": "沁芳溪水面有沿河道方向的流动感，闸口有跌水", "weight": 3, "source": "原著17 '水如晶帘一般奔入'" },
-      { "id": "g-wind", "text": "柳、竹、花木随风摇摆", "weight": 2, "source": "用户需求" },
-      { "id": "g-life", "text": "有蝴蝶/落花/游鱼/禽鸟等动态元素", "weight": 2, "source": "用户需求；原著17 '鹅鸭鸡类'" },
-      { "id": "g-veg", "text": "树木有枝干与叶团层次，不是单一圆球；鸟瞰不像'泥巴玩具'", "weight": 3, "source": "用户反馈 v0.1" },
-      { "id": "g-paths", "text": "园路有铺装纹理（石子甬路/方砖），院内铺地", "weight": 1, "source": "原著17 '石子漫成甬路'" },
-      { "id": "g-perf", "text": "harness 测得 fps ≥ 30", "weight": 2, "source": "loop 护栏" }
-    ],
-    "zhengmen": [
-      { "id": "zm-5bays", "text": "正门五间，卷棚'泥鳅脊'", "weight": 3, "source": "原著17" },
-      { "id": "zm-plain", "text": "门栏窗槅细雕，'并无朱粉涂饰'（本色木）", "weight": 2, "source": "原著17" },
-      { "id": "zm-base", "text": "白石台矶（台基凿西番草花样），水磨群墙", "weight": 2, "source": "原著17" },
-      { "id": "zm-wall", "text": "左右雪白粉墙，下为虎皮石", "weight": 2, "source": "原著17" },
-      { "id": "zm-lions", "text": "门前汉白玉石狮一对（须弥座）", "weight": 1, "source": "ref04" },
-      { "id": "zm-plaque", "text": "'大观园'匾", "weight": 2, "source": "原著18" }
-    ],
-    "cuizhang": [
-      { "id": "cz-block", "text": "进门迎面翠嶂挡住全园视线", "weight": 3, "source": "原著17" },
-      { "id": "cz-rocks", "text": "白石崚嶒，如鬼怪猛兽；苔藓成斑，藤萝掩映", "weight": 2, "source": "原著17" },
-      { "id": "cz-path", "text": "羊肠小径入石洞", "weight": 2, "source": "原著17" },
-      { "id": "cz-stone", "text": "镜面白石题'曲径通幽处'", "weight": 2, "source": "原著17" }
-    ],
-    "qinfangting": [
-      { "id": "qf-3", "text": "石桥三港，兽面衔吐（三孔/三向水口）", "weight": 3, "source": "原著17" },
-      { "id": "qf-rail", "text": "白石为栏，环抱池沿", "weight": 2, "source": "原著17" },
-      { "id": "qf-ting", "text": "桥上有亭，亭匾'沁芳'", "weight": 3, "source": "原著17" },
-      { "id": "qf-dui", "text": "联'绕堤柳借三篙翠，隔岸花分一脉香'", "weight": 2, "source": "原著17" },
-      { "id": "qf-willow", "text": "绕堤垂柳、隔岸花", "weight": 1, "source": "原著17 联意" }
-    ],
-    "xiaoxiang": [
-      { "id": "xx-bamboo", "text": "千百竿翠竹遮映，竹林随风动", "weight": 3, "source": "原著17；北京'一带修篁'" },
-      { "id": "xx-wall", "text": "一带粉垣", "weight": 1, "source": "原著17" },
-      { "id": "xx-lang", "text": "入门曲折游廊", "weight": 2, "source": "原著17" },
-      { "id": "xx-path", "text": "阶下石子漫成甬路", "weight": 1, "source": "原著17" },
-      { "id": "xx-3jian", "text": "小小两三间房舍，一明两暗", "weight": 2, "source": "原著17" },
-      { "id": "xx-back", "text": "后院大株梨花兼芭蕉，两间小退步", "weight": 2, "source": "原著17" },
-      { "id": "xx-spring", "text": "墙下引泉，绕阶缘屋，盘旋竹下而出", "weight": 1, "source": "原著17" },
-      { "id": "xx-plaque", "text": "匾'有凤来仪'/'潇湘馆'，联'宝鼎茶闲烟尚绿，幽窗棋罢指犹凉'", "weight": 3, "source": "原著17/18" },
-      { "id": "xx-cool", "text": "冷色彩画（青绿竹纹，'斑竹座'），绿柱绿窗", "weight": 1, "source": "北京 ctrip 4158352" }
-    ],
-    "daoxiang": [
-      { "id": "dx-wall", "text": "黄泥筑就矮墙，墙头稻茎掩护", "weight": 3, "source": "原著17" },
-      { "id": "dx-apricot", "text": "几百株杏花，如喷火蒸霞", "weight": 3, "source": "原著17" },
-      { "id": "dx-mao", "text": "数楹茅屋，纸窗木榻", "weight": 2, "source": "原著17" },
-      { "id": "dx-li", "text": "桑榆槿柘编就两溜青篱", "weight": 2, "source": "原著17" },
-      { "id": "dx-well", "text": "篱外山坡下土井，桔槔辘轳", "weight": 2, "source": "原著17" },
-      { "id": "dx-field", "text": "分畦列亩，佳蔬菜花，漫然无际", "weight": 2, "source": "原著17" },
-      { "id": "dx-flag", "text": "竹竿挑酒幌'杏帘在望'；路旁石碣", "weight": 2, "source": "原著17" },
-      { "id": "dx-fowl", "text": "鹅鸭鸡类", "weight": 1, "source": "原著17 贾珍语" },
-      { "id": "dx-dui", "text": "联'新涨绿添浣葛处，好云香护采芹人'", "weight": 1, "source": "原著17" }
-    ],
-    "huajing": [
-      { "id": "hj-seq", "text": "荼蘼架、木香棚、牡丹亭、芍药圃、蔷薇院、芭蕉坞依次可辨", "weight": 2, "source": "原著17" },
-      { "id": "hj-bloom", "text": "花架上花朵开放（可有开合/摇曳动画）", "weight": 1, "source": "用户需求" }
-    ],
-    "liaoting": [
-      { "id": "lt-cave", "text": "水声潺湲，泻出石洞（水从洞中流出）", "weight": 3, "source": "原著17" },
-      { "id": "lt-vines", "text": "上则萝薜倒垂", "weight": 2, "source": "原著17" },
-      { "id": "lt-petals", "text": "下则落花浮荡，随水流动", "weight": 2, "source": "原著17" },
-      { "id": "lt-trees", "text": "池边两行垂柳，杂着桃杏", "weight": 2, "source": "原著17" },
-      { "id": "lt-plaque", "text": "港上'蓼汀花溆'匾（灯）", "weight": 1, "source": "原著18" }
-    ],
-    "hengwu": [
-      { "id": "hw-wall", "text": "一色水磨砖墙，清瓦花堵（不刷白）", "weight": 2, "source": "原著17" },
-      { "id": "hw-rock", "text": "入门迎面插天大玲珑山石，四面群石，把房屋全遮住", "weight": 3, "source": "原著17" },
-      { "id": "hw-noflower", "text": "一株花木也无，只有异草（藤蔓垂檐绕柱，实若丹砂，花如金桂）", "weight": 3, "source": "原著17" },
-      { "id": "hw-hall", "text": "五间清厦连卷棚，四面出廊，绿窗油壁", "weight": 2, "source": "原著17" },
-      { "id": "hw-lang", "text": "超手游廊（灰白，冰裂纹窗棂）", "weight": 1, "source": "原著17；北京" },
-      { "id": "hw-plaque", "text": "匾'蘅芷清芬'，联'吟成豆蔻才犹艳，睡足酴醾梦也香'", "weight": 2, "source": "原著17" },
-      { "id": "hw-bridge", "text": "柳阴中折带朱栏板桥", "weight": 1, "source": "原著17" }
-    ],
-    "zhengdian": [
-      { "id": "zd-guen", "text": "正殿匾'顾恩思义'，联'天地启宏慈，赤子苍头同感戴；古今垂旷典，九州万国被恩荣'", "weight": 3, "source": "原著18" },
-      { "id": "zd-yuetai", "text": "殿前月台，玉栏绕砌，东阶", "weight": 2, "source": "原著18 '自东阶升月台'" },
-      { "id": "zd-lou", "text": "正楼大观楼（两层，平座栏杆），东缀锦阁、西含芳阁，复道萦纡", "weight": 3, "source": "原著17/18" },
-      { "id": "zd-pine", "text": "青松拂檐", "weight": 1, "source": "原著17" },
-      { "id": "zd-hexi", "text": "和玺/龙凤彩画贴金，'金辉兽面，彩焕螭头'", "weight": 2, "source": "原著17；北京" },
-      { "id": "zd-bronze", "text": "殿前铜鹿铜鹤、香鼎", "weight": 1, "source": "北京 ctrip 4158352" },
-      { "id": "zd-notile", "text": "灰筒瓦，不用琉璃", "weight": 1, "source": "北京" }
-    ],
-    "paifang": [
-      { "id": "pf-dragon", "text": "玉石牌坊，龙蟠螭护，玲珑凿就", "weight": 2, "source": "原著17" },
-      { "id": "pf-text", "text": "正中额'省亲别墅'（元妃所改），次额'芳岸''玉津'", "weight": 3, "source": "原著18；北京" },
-      { "id": "pf-scale", "text": "约 8m 高 11m 宽", "weight": 1, "source": "北京 ctrip 4033751" }
-    ],
-    "qinfangzha": [
-      { "id": "qz-fall", "text": "水如晶帘一般奔入（跌水/水帘）", "weight": 3, "source": "原著17" },
-      { "id": "qz-bridge", "text": "大桥即通外河之闸", "weight": 2, "source": "原著17" },
-      { "id": "qz-peach", "text": "桥边桃花、落红成阵", "weight": 1, "source": "原著23" }
-    ],
-    "yihong": [
-      { "id": "yh-gate", "text": "垂花门楼（三开间，彩饰斑斓），黑底金字匾", "weight": 2, "source": "北京；ref05" },
-      { "id": "yh-moon", "text": "碧桃 + 竹篱花障编就的月洞门", "weight": 2, "source": "原著17" },
-      { "id": "yh-wall", "text": "粉墙环护，绿柳周垂", "weight": 1, "source": "原著17" },
-      { "id": "yh-lang", "text": "两边游廊相接（抄手游廊）", "weight": 2, "source": "原著17；北京" },
-      { "id": "yh-jiaotang", "text": "一边数本芭蕉，一边西府海棠（其势若伞，丝垂翠缕，葩吐丹砂）", "weight": 3, "source": "原著17" },
-      { "id": "yh-rocks", "text": "院中点衬几块山石", "weight": 1, "source": "原著17" },
-      { "id": "yh-baosha", "text": "抱厦（三间）", "weight": 2, "source": "原著17；北京" },
-      { "id": "yh-plaque", "text": "匾'怡红快绿'", "weight": 2, "source": "原著18" },
-      { "id": "yh-rose", "text": "后院满架蔷薇宝相", "weight": 1, "source": "原著17" },
-      { "id": "yh-caihua", "text": "全园最艳的金线苏彩", "weight": 2, "source": "北京" }
-    ],
-    "qiushuang": [
-      { "id": "qs-moon", "text": "圆洞门，青砖门套，门上石刻匾'秋爽斋'", "weight": 2, "source": "ref12" },
-      { "id": "qs-tung", "text": "梧桐（'桐剪秋风'）与芭蕉", "weight": 2, "source": "原著18/40" },
-      { "id": "qs-3jian", "text": "三间不隔断的晓翠堂", "weight": 1, "source": "原著40" },
-      { "id": "qs-dui", "text": "联'烟霞闲骨格，泉石野生涯'", "weight": 1, "source": "原著40" }
-    ],
-    "ouxiang": [
-      { "id": "ox-water", "text": "盖在池中，四面有窗", "weight": 3, "source": "原著38" },
-      { "id": "ox-lang", "text": "左右曲廊跨水接岸", "weight": 2, "source": "原著38" },
-      { "id": "ox-bridge", "text": "后面曲折竹桥", "weight": 2, "source": "原著38" },
-      { "id": "ox-dui", "text": "黑漆嵌蚌对子'芙蓉影破归兰桨，菱藕香深写竹桥'", "weight": 2, "source": "原著38" },
-      { "id": "ox-gui", "text": "山坡下两棵桂花", "weight": 1, "source": "原著38" },
-      { "id": "ox-lotus", "text": "池中荷叶、菱", "weight": 1, "source": "原著38/40" }
-    ],
-    "zhuijin": [
-      { "id": "zj-lou", "text": "缀锦楼两层，临水小洲", "weight": 2, "source": "原著23" },
-      { "id": "zj-boat", "text": "紫菱洲蓼溆一带有船", "weight": 1, "source": "原著40" }
-    ],
-    "longcui": [
-      { "id": "lc-plum", "text": "十数株红梅如胭脂", "weight": 3, "source": "原著49" },
-      { "id": "lc-temple", "text": "山门 + 佛殿（灰瓦歇山，朱红隔扇，月台、香炉）", "weight": 2, "source": "原著17 '幽尼佛寺'；ref11" },
-      { "id": "lc-hill", "text": "在山坡下，顺着山脚转过去可见", "weight": 1, "source": "原著49" }
-    ],
-    "tubi": [
-      { "id": "tb-ridge", "text": "凸碧山庄在大主山峰脊敞厅，厅前平台", "weight": 2, "source": "原著75" },
-      { "id": "tb-aojing", "text": "凹晶溪馆在山怀抱中近水，矮小，竹栏通藕香榭", "weight": 2, "source": "原著76" }
-    ],
-    "luxue": [
-      { "id": "lx-mao", "text": "茅檐土壁，槿篱竹牖，傍山临水河滩", "weight": 2, "source": "原著49" },
-      { "id": "lx-reed", "text": "四面芦苇掩覆，随风摆", "weight": 2, "source": "原著49" }
-    ],
-    "yuanxiao": [
-      { "id": "yx-lights", "text": "园中处处灯光相映，石栏上水晶玻璃风灯", "weight": 3, "source": "原著18" },
-      { "id": "yx-trees", "text": "柳杏诸树以绸绫纸绢扎花，每株悬灯数盏", "weight": 2, "source": "原著18" },
-      { "id": "yx-boat", "text": "船上盆景诸灯，珠帘绣幙", "weight": 1, "source": "原著18" },
-      { "id": "yx-plaque", "text": "'蓼汀花溆'匾灯；石牌坊'天仙宝境'", "weight": 2, "source": "原著18" }
-    ]
+ "version": 1,
+ "url": "http://localhost:5173/",
+ "viewport": {
+  "width": 1440,
+  "height": 900
+ },
+ "settleMs": 1200,
+ "fpsSampleMs": 2000,
+ "fpsBudget": 30,
+ "_coords": "x 向东，z 向南，y 向上；园界 x∈[-180,180] z∈[-150,150]；景点坐标见 web/src/layout.json。viewpoint 可用 {place, dist} 交给 __dgy.viewFor，或用 {pos:[x,y,z], target:[x,y,z]}。time 可写下标 (0 昼, 1 暮, 2 月夜) 或名称（若 __dgy.setTimeByName 存在，如 '元宵'）。",
+ "viewpoints": [
+  {
+   "id": "overview",
+   "label": "全园鸟瞰",
+   "pos": [
+    115,
+    150,
+    255
+   ],
+   "target": [
+    0,
+    0,
+    0
+   ],
+   "spot": "global"
+  },
+  {
+   "id": "overview_n",
+   "label": "自北向南鸟瞰",
+   "pos": [
+    -40,
+    120,
+    -260
+   ],
+   "target": [
+    0,
+    0,
+    20
+   ],
+   "spot": "global"
+  },
+  {
+   "id": "zhengmen_eye",
+   "label": "正门·人眼高度（贾政秉正看门）",
+   "pos": [
+    0,
+    2.6,
+    172
+   ],
+   "target": [
+    0,
+    4,
+    148
+   ],
+   "spot": "zhengmen"
+  },
+  {
+   "id": "zhengmen",
+   "label": "正门",
+   "place": "zhengmen",
+   "dist": 34,
+   "spot": "zhengmen"
+  },
+  {
+   "id": "cuizhang",
+   "label": "翠嶂·曲径通幽",
+   "pos": [
+    6,
+    5,
+    142
+   ],
+   "target": [
+    0,
+    4,
+    122
+   ],
+   "spot": "cuizhang"
+  },
+  {
+   "id": "qinfangting",
+   "label": "沁芳亭·石桥三港",
+   "place": "qinfangting",
+   "dist": 26,
+   "spot": "qinfangting"
+  },
+  {
+   "id": "qinfangting_eye",
+   "label": "沁芳亭·桥头",
+   "pos": [
+    4,
+    3.2,
+    96
+   ],
+   "target": [
+    0,
+    4,
+    76
+   ],
+   "spot": "qinfangting"
+  },
+  {
+   "id": "xiaoxiang",
+   "label": "潇湘馆",
+   "place": "xiaoxiang",
+   "spot": "xiaoxiang"
+  },
+  {
+   "id": "xiaoxiang_in",
+   "label": "潇湘馆·院内",
+   "pos": [
+    -52,
+    3.0,
+    70
+   ],
+   "target": [
+    -58,
+    3,
+    52
+   ],
+   "spot": "xiaoxiang"
+  },
+  {
+   "id": "daoxiang",
+   "label": "稻香村",
+   "place": "daoxiang",
+   "spot": "daoxiang"
+  },
+  {
+   "id": "huajing",
+   "label": "荼蘼架·木香棚·牡丹亭",
+   "place": "huajing",
+   "dist": 40,
+   "spot": "huajing"
+  },
+  {
+   "id": "liaoting",
+   "label": "蓼汀花溆",
+   "place": "liaoting",
+   "dist": 30,
+   "spot": "liaoting"
+  },
+  {
+   "id": "hengwu",
+   "label": "蘅芜苑",
+   "place": "hengwu",
+   "spot": "hengwu"
+  },
+  {
+   "id": "hengwu_gate",
+   "label": "蘅芜苑·入门即见大石",
+   "pos": [
+    -132,
+    3.0,
+    -92
+   ],
+   "target": [
+    -132,
+    4,
+    -110
+   ],
+   "spot": "hengwu"
+  },
+  {
+   "id": "zhengdian",
+   "label": "省亲别墅·大观楼",
+   "place": "zhengdian",
+   "dist": 70,
+   "spot": "zhengdian"
+  },
+  {
+   "id": "zhengdian_front",
+   "label": "正殿·月台正面",
+   "pos": [
+    10,
+    6,
+    -66
+   ],
+   "target": [
+    10,
+    7,
+    -116
+   ],
+   "spot": "zhengdian"
+  },
+  {
+   "id": "paifang",
+   "label": "玉石牌坊",
+   "pos": [
+    12,
+    4,
+    -64
+   ],
+   "target": [
+    10,
+    5,
+    -84
+   ],
+   "spot": "paifang"
+  },
+  {
+   "id": "qinfangzha",
+   "label": "沁芳闸",
+   "place": "qinfangzha",
+   "dist": 26,
+   "spot": "qinfangzha"
+  },
+  {
+   "id": "yihong",
+   "label": "怡红院",
+   "place": "yihong",
+   "spot": "yihong"
+  },
+  {
+   "id": "yihong_in",
+   "label": "怡红院·院内蕉棠",
+   "pos": [
+    98,
+    3.0,
+    92
+   ],
+   "target": [
+    98,
+    3,
+    66
+   ],
+   "spot": "yihong"
+  },
+  {
+   "id": "qiushuang",
+   "label": "秋爽斋",
+   "place": "qiushuang",
+   "spot": "qiushuang"
+  },
+  {
+   "id": "ouxiang",
+   "label": "藕香榭",
+   "place": "ouxiang",
+   "dist": 30,
+   "spot": "ouxiang"
+  },
+  {
+   "id": "zhuijin",
+   "label": "紫菱洲·缀锦楼",
+   "place": "zhuijin",
+   "dist": 32,
+   "spot": "zhuijin"
+  },
+  {
+   "id": "longcui",
+   "label": "栊翠庵",
+   "place": "longcui",
+   "dist": 34,
+   "spot": "longcui"
+  },
+  {
+   "id": "tubi_aojing",
+   "label": "凸碧山庄与凹晶溪馆",
+   "pos": [
+    -10,
+    26,
+    -50
+   ],
+   "target": [
+    -45,
+    6,
+    -82
+   ],
+   "spot": "tubi"
+  },
+  {
+   "id": "luxue",
+   "label": "芦雪广",
+   "place": "luxue",
+   "dist": 30,
+   "spot": "luxue"
+  },
+  {
+   "id": "dusk",
+   "label": "暮色全景",
+   "pos": [
+    -60,
+    60,
+    120
+   ],
+   "target": [
+    0,
+    0,
+    -60
+   ],
+   "time": 1,
+   "spot": "global"
+  },
+  {
+   "id": "night",
+   "label": "月夜（第七十六回）",
+   "place": "xiaoxiang",
+   "dist": 60,
+   "time": 2,
+   "spot": "global"
+  },
+  {
+   "id": "yuanxiao",
+   "label": "元宵省亲灯景（第十八回，若已实现）",
+   "pos": [
+    -60,
+    40,
+    40
+   ],
+   "target": [
+    -20,
+    0,
+    -40
+   ],
+   "time": "元宵",
+   "spot": "yuanxiao",
+   "optional": true
+  },
+  {
+   "id": "gongdu",
+   "label": "沁芳闸桥边·宝黛共读",
+   "place": "gongdu",
+   "dist": 7,
+   "spot": "gongdu"
+  },
+  {
+   "id": "huazhong",
+   "label": "埋香冢·黛玉葬花",
+   "place": "huazhong",
+   "dist": 7,
+   "spot": "huazhong"
+  },
+  {
+   "id": "dicui",
+   "label": "滴翠亭·宝钗扑蝶",
+   "pos": [
+    34,
+    9,
+    4
+   ],
+   "target": [
+    20,
+    1,
+    -12
+   ],
+   "spot": "dicui"
   }
+ ],
+ "checklists": {
+  "global": [
+   {
+    "id": "g-ridge",
+    "text": "主要建筑屋脊有正吻/垂脊/走兽等脊饰，不是光秃方条",
+    "weight": 3,
+    "source": "refs.md 全局样式；ref02/ref04"
+   },
+   {
+    "id": "g-eave",
+    "text": "檐口可见椽头（飞椽+檐椽）与瓦当滴水，红连檐+蓝绿椽头彩带",
+    "weight": 3,
+    "source": "refs.md 全局样式；ref02/ref05"
+   },
+   {
+    "id": "g-caihua",
+    "text": "额枋有苏式彩画（青绿底、白底包袱山水、金线），不是纯色条带",
+    "weight": 3,
+    "source": "金线苏彩 visitbeijing；ref05/ref09"
+   },
+   {
+    "id": "g-guazi",
+    "text": "柱间有倒挂楣子与雀替，游廊有坐凳楣子",
+    "weight": 2,
+    "source": "ref02/ref05/ref09"
+   },
+   {
+    "id": "g-door",
+    "text": "隔扇门/槛窗分格清楚（棂心+裙板），明间开门",
+    "weight": 2,
+    "source": "ref02/ref11"
+   },
+   {
+    "id": "g-steps",
+    "text": "台基有踏跺（台阶）与柱础",
+    "weight": 2,
+    "source": "ref04/ref11"
+   },
+   {
+    "id": "g-tile",
+    "text": "全园灰筒瓦，无琉璃（含省亲别墅）",
+    "weight": 2,
+    "source": "北京：省亲别墅'不设琉璃'"
+   },
+   {
+    "id": "g-wall",
+    "text": "白粉墙下碱青砖/虎皮石，墙顶筒瓦压顶，部分墙面有漏窗",
+    "weight": 2,
+    "source": "原著17；ref12"
+   },
+   {
+    "id": "g-plaques",
+    "text": "所有题名处都有匾，近景可读，字序与原著一致",
+    "weight": 3,
+    "source": "原著17/18"
+   },
+   {
+    "id": "g-couplets",
+    "text": "原著有楹联处（沁芳亭/潇湘馆/稻香村/蘅芜苑/顾恩思义殿/藕香榭/秋爽斋）挂联",
+    "weight": 3,
+    "source": "原著17/18/38/40"
+   },
+   {
+    "id": "g-lantern",
+    "text": "檐下挂红纱灯笼（每开间一盏的节奏）",
+    "weight": 1,
+    "source": "ref02/ref09"
+   },
+   {
+    "id": "g-water-flow",
+    "text": "沁芳溪水面有沿河道方向的流动感，闸口有跌水",
+    "weight": 3,
+    "source": "原著17 '水如晶帘一般奔入'"
+   },
+   {
+    "id": "g-wind",
+    "text": "柳、竹、花木随风摇摆",
+    "weight": 2,
+    "source": "用户需求"
+   },
+   {
+    "id": "g-life",
+    "text": "有蝴蝶/落花/游鱼/禽鸟等动态元素",
+    "weight": 2,
+    "source": "用户需求；原著17 '鹅鸭鸡类'"
+   },
+   {
+    "id": "g-veg",
+    "text": "树木有枝干与叶团层次，不是单一圆球；鸟瞰不像'泥巴玩具'",
+    "weight": 3,
+    "source": "用户反馈 v0.1"
+   },
+   {
+    "id": "g-paths",
+    "text": "园路有铺装纹理（石子甬路/方砖），院内铺地",
+    "weight": 1,
+    "source": "原著17 '石子漫成甬路'"
+   },
+   {
+    "id": "g-perf",
+    "text": "harness 测得 fps ≥ 30",
+    "weight": 2,
+    "source": "loop 护栏"
+   }
+  ],
+  "zhengmen": [
+   {
+    "id": "zm-5bays",
+    "text": "正门五间，卷棚'泥鳅脊'",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "zm-plain",
+    "text": "门栏窗槅细雕，'并无朱粉涂饰'（本色木）",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "zm-base",
+    "text": "白石台矶（台基凿西番草花样），水磨群墙",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "zm-wall",
+    "text": "左右雪白粉墙，下为虎皮石",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "zm-lions",
+    "text": "门前汉白玉石狮一对（须弥座）",
+    "weight": 1,
+    "source": "ref04"
+   },
+   {
+    "id": "zm-plaque",
+    "text": "'大观园'匾",
+    "weight": 2,
+    "source": "原著18"
+   }
+  ],
+  "cuizhang": [
+   {
+    "id": "cz-block",
+    "text": "进门迎面翠嶂挡住全园视线",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "cz-rocks",
+    "text": "白石崚嶒，如鬼怪猛兽；苔藓成斑，藤萝掩映",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "cz-path",
+    "text": "羊肠小径入石洞",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "cz-stone",
+    "text": "镜面白石题'曲径通幽处'",
+    "weight": 2,
+    "source": "原著17"
+   }
+  ],
+  "qinfangting": [
+   {
+    "id": "qf-3",
+    "text": "石桥三港，兽面衔吐（三孔/三向水口）",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "qf-rail",
+    "text": "白石为栏，环抱池沿",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "qf-ting",
+    "text": "桥上有亭，亭匾'沁芳'",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "qf-dui",
+    "text": "联'绕堤柳借三篙翠，隔岸花分一脉香'",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "qf-willow",
+    "text": "绕堤垂柳、隔岸花",
+    "weight": 1,
+    "source": "原著17 联意"
+   }
+  ],
+  "xiaoxiang": [
+   {
+    "id": "xx-bamboo",
+    "text": "千百竿翠竹遮映，竹林随风动",
+    "weight": 3,
+    "source": "原著17；北京'一带修篁'"
+   },
+   {
+    "id": "xx-wall",
+    "text": "一带粉垣",
+    "weight": 1,
+    "source": "原著17"
+   },
+   {
+    "id": "xx-lang",
+    "text": "入门曲折游廊",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "xx-path",
+    "text": "阶下石子漫成甬路",
+    "weight": 1,
+    "source": "原著17"
+   },
+   {
+    "id": "xx-3jian",
+    "text": "小小两三间房舍，一明两暗",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "xx-back",
+    "text": "后院大株梨花兼芭蕉，两间小退步",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "xx-spring",
+    "text": "墙下引泉，绕阶缘屋，盘旋竹下而出",
+    "weight": 1,
+    "source": "原著17"
+   },
+   {
+    "id": "xx-plaque",
+    "text": "匾'有凤来仪'/'潇湘馆'，联'宝鼎茶闲烟尚绿，幽窗棋罢指犹凉'",
+    "weight": 3,
+    "source": "原著17/18"
+   },
+   {
+    "id": "xx-cool",
+    "text": "冷色彩画（青绿竹纹，'斑竹座'），绿柱绿窗",
+    "weight": 1,
+    "source": "北京 ctrip 4158352"
+   }
+  ],
+  "daoxiang": [
+   {
+    "id": "dx-wall",
+    "text": "黄泥筑就矮墙，墙头稻茎掩护",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "dx-apricot",
+    "text": "几百株杏花，如喷火蒸霞",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "dx-mao",
+    "text": "数楹茅屋，纸窗木榻",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "dx-li",
+    "text": "桑榆槿柘编就两溜青篱",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "dx-well",
+    "text": "篱外山坡下土井，桔槔辘轳",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "dx-field",
+    "text": "分畦列亩，佳蔬菜花，漫然无际",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "dx-flag",
+    "text": "竹竿挑酒幌'杏帘在望'；路旁石碣",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "dx-fowl",
+    "text": "鹅鸭鸡类",
+    "weight": 1,
+    "source": "原著17 贾珍语"
+   },
+   {
+    "id": "dx-dui",
+    "text": "联'新涨绿添浣葛处，好云香护采芹人'",
+    "weight": 1,
+    "source": "原著17"
+   }
+  ],
+  "huajing": [
+   {
+    "id": "hj-seq",
+    "text": "荼蘼架、木香棚、牡丹亭、芍药圃、蔷薇院、芭蕉坞依次可辨",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "hj-bloom",
+    "text": "花架上花朵开放（可有开合/摇曳动画）",
+    "weight": 1,
+    "source": "用户需求"
+   }
+  ],
+  "liaoting": [
+   {
+    "id": "lt-cave",
+    "text": "水声潺湲，泻出石洞（水从洞中流出）",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "lt-vines",
+    "text": "上则萝薜倒垂",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "lt-petals",
+    "text": "下则落花浮荡，随水流动",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "lt-trees",
+    "text": "池边两行垂柳，杂着桃杏",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "lt-plaque",
+    "text": "港上'蓼汀花溆'匾（灯）",
+    "weight": 1,
+    "source": "原著18"
+   }
+  ],
+  "hengwu": [
+   {
+    "id": "hw-wall",
+    "text": "一色水磨砖墙，清瓦花堵（不刷白）",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "hw-rock",
+    "text": "入门迎面插天大玲珑山石，四面群石，把房屋全遮住",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "hw-noflower",
+    "text": "一株花木也无，只有异草（藤蔓垂檐绕柱，实若丹砂，花如金桂）",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "hw-hall",
+    "text": "五间清厦连卷棚，四面出廊，绿窗油壁",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "hw-lang",
+    "text": "超手游廊（灰白，冰裂纹窗棂）",
+    "weight": 1,
+    "source": "原著17；北京"
+   },
+   {
+    "id": "hw-plaque",
+    "text": "匾'蘅芷清芬'，联'吟成豆蔻才犹艳，睡足酴醾梦也香'",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "hw-bridge",
+    "text": "柳阴中折带朱栏板桥",
+    "weight": 1,
+    "source": "原著17"
+   }
+  ],
+  "zhengdian": [
+   {
+    "id": "zd-guen",
+    "text": "正殿匾'顾恩思义'，联'天地启宏慈，赤子苍头同感戴；古今垂旷典，九州万国被恩荣'",
+    "weight": 3,
+    "source": "原著18"
+   },
+   {
+    "id": "zd-yuetai",
+    "text": "殿前月台，玉栏绕砌，东阶",
+    "weight": 2,
+    "source": "原著18 '自东阶升月台'"
+   },
+   {
+    "id": "zd-lou",
+    "text": "正楼大观楼（两层，平座栏杆），东缀锦阁、西含芳阁，复道萦纡",
+    "weight": 3,
+    "source": "原著17/18"
+   },
+   {
+    "id": "zd-pine",
+    "text": "青松拂檐",
+    "weight": 1,
+    "source": "原著17"
+   },
+   {
+    "id": "zd-hexi",
+    "text": "和玺/龙凤彩画贴金，'金辉兽面，彩焕螭头'",
+    "weight": 2,
+    "source": "原著17；北京"
+   },
+   {
+    "id": "zd-bronze",
+    "text": "殿前铜鹿铜鹤、香鼎",
+    "weight": 1,
+    "source": "北京 ctrip 4158352"
+   },
+   {
+    "id": "zd-notile",
+    "text": "灰筒瓦，不用琉璃",
+    "weight": 1,
+    "source": "北京"
+   }
+  ],
+  "paifang": [
+   {
+    "id": "pf-dragon",
+    "text": "玉石牌坊，龙蟠螭护，玲珑凿就",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "pf-text",
+    "text": "正中额'省亲别墅'（元妃所改），次额'芳岸''玉津'",
+    "weight": 3,
+    "source": "原著18；北京"
+   },
+   {
+    "id": "pf-scale",
+    "text": "约 8m 高 11m 宽",
+    "weight": 1,
+    "source": "北京 ctrip 4033751"
+   }
+  ],
+  "qinfangzha": [
+   {
+    "id": "qz-fall",
+    "text": "水如晶帘一般奔入（跌水/水帘）",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "qz-bridge",
+    "text": "大桥即通外河之闸",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "qz-peach",
+    "text": "桥边桃花、落红成阵",
+    "weight": 1,
+    "source": "原著23"
+   }
+  ],
+  "yihong": [
+   {
+    "id": "yh-gate",
+    "text": "垂花门楼（三开间，彩饰斑斓），黑底金字匾",
+    "weight": 2,
+    "source": "北京；ref05"
+   },
+   {
+    "id": "yh-moon",
+    "text": "碧桃 + 竹篱花障编就的月洞门",
+    "weight": 2,
+    "source": "原著17"
+   },
+   {
+    "id": "yh-wall",
+    "text": "粉墙环护，绿柳周垂",
+    "weight": 1,
+    "source": "原著17"
+   },
+   {
+    "id": "yh-lang",
+    "text": "两边游廊相接（抄手游廊）",
+    "weight": 2,
+    "source": "原著17；北京"
+   },
+   {
+    "id": "yh-jiaotang",
+    "text": "一边数本芭蕉，一边西府海棠（其势若伞，丝垂翠缕，葩吐丹砂）",
+    "weight": 3,
+    "source": "原著17"
+   },
+   {
+    "id": "yh-rocks",
+    "text": "院中点衬几块山石",
+    "weight": 1,
+    "source": "原著17"
+   },
+   {
+    "id": "yh-baosha",
+    "text": "抱厦（三间）",
+    "weight": 2,
+    "source": "原著17；北京"
+   },
+   {
+    "id": "yh-plaque",
+    "text": "匾'怡红快绿'",
+    "weight": 2,
+    "source": "原著18"
+   },
+   {
+    "id": "yh-rose",
+    "text": "后院满架蔷薇宝相",
+    "weight": 1,
+    "source": "原著17"
+   },
+   {
+    "id": "yh-caihua",
+    "text": "全园最艳的金线苏彩",
+    "weight": 2,
+    "source": "北京"
+   }
+  ],
+  "qiushuang": [
+   {
+    "id": "qs-moon",
+    "text": "圆洞门，青砖门套，门上石刻匾'秋爽斋'",
+    "weight": 2,
+    "source": "ref12"
+   },
+   {
+    "id": "qs-tung",
+    "text": "梧桐（'桐剪秋风'）与芭蕉",
+    "weight": 2,
+    "source": "原著18/40"
+   },
+   {
+    "id": "qs-3jian",
+    "text": "三间不隔断的晓翠堂",
+    "weight": 1,
+    "source": "原著40"
+   },
+   {
+    "id": "qs-dui",
+    "text": "联'烟霞闲骨格，泉石野生涯'",
+    "weight": 1,
+    "source": "原著40"
+   }
+  ],
+  "ouxiang": [
+   {
+    "id": "ox-water",
+    "text": "盖在池中，四面有窗",
+    "weight": 3,
+    "source": "原著38"
+   },
+   {
+    "id": "ox-lang",
+    "text": "左右曲廊跨水接岸",
+    "weight": 2,
+    "source": "原著38"
+   },
+   {
+    "id": "ox-bridge",
+    "text": "后面曲折竹桥",
+    "weight": 2,
+    "source": "原著38"
+   },
+   {
+    "id": "ox-dui",
+    "text": "黑漆嵌蚌对子'芙蓉影破归兰桨，菱藕香深写竹桥'",
+    "weight": 2,
+    "source": "原著38"
+   },
+   {
+    "id": "ox-gui",
+    "text": "山坡下两棵桂花",
+    "weight": 1,
+    "source": "原著38"
+   },
+   {
+    "id": "ox-lotus",
+    "text": "池中荷叶、菱",
+    "weight": 1,
+    "source": "原著38/40"
+   }
+  ],
+  "zhuijin": [
+   {
+    "id": "zj-lou",
+    "text": "缀锦楼两层，临水小洲",
+    "weight": 2,
+    "source": "原著23"
+   },
+   {
+    "id": "zj-boat",
+    "text": "紫菱洲蓼溆一带有船",
+    "weight": 1,
+    "source": "原著40"
+   }
+  ],
+  "longcui": [
+   {
+    "id": "lc-plum",
+    "text": "十数株红梅如胭脂",
+    "weight": 3,
+    "source": "原著49"
+   },
+   {
+    "id": "lc-temple",
+    "text": "山门 + 佛殿（灰瓦歇山，朱红隔扇，月台、香炉）",
+    "weight": 2,
+    "source": "原著17 '幽尼佛寺'；ref11"
+   },
+   {
+    "id": "lc-hill",
+    "text": "在山坡下，顺着山脚转过去可见",
+    "weight": 1,
+    "source": "原著49"
+   }
+  ],
+  "tubi": [
+   {
+    "id": "tb-ridge",
+    "text": "凸碧山庄在大主山峰脊敞厅，厅前平台",
+    "weight": 2,
+    "source": "原著75"
+   },
+   {
+    "id": "tb-aojing",
+    "text": "凹晶溪馆在山怀抱中近水，矮小，竹栏通藕香榭",
+    "weight": 2,
+    "source": "原著76"
+   }
+  ],
+  "luxue": [
+   {
+    "id": "lx-mao",
+    "text": "茅檐土壁，槿篱竹牖，傍山临水河滩",
+    "weight": 2,
+    "source": "原著49"
+   },
+   {
+    "id": "lx-reed",
+    "text": "四面芦苇掩覆，随风摆",
+    "weight": 2,
+    "source": "原著49"
+   }
+  ],
+  "yuanxiao": [
+   {
+    "id": "yx-lights",
+    "text": "园中处处灯光相映，石栏上水晶玻璃风灯",
+    "weight": 3,
+    "source": "原著18"
+   },
+   {
+    "id": "yx-trees",
+    "text": "柳杏诸树以绸绫纸绢扎花，每株悬灯数盏",
+    "weight": 2,
+    "source": "原著18"
+   },
+   {
+    "id": "yx-boat",
+    "text": "船上盆景诸灯，珠帘绣幙",
+    "weight": 1,
+    "source": "原著18"
+   },
+   {
+    "id": "yx-plaque",
+    "text": "'蓼汀花溆'匾灯；石牌坊'天仙宝境'",
+    "weight": 2,
+    "source": "原著18"
+   }
+  ],
+  "gongdu": [
+   {
+    "id": "gd-peach",
+    "text": "桃花树下，落花满地满身满书",
+    "weight": 3,
+    "source": "原著23"
+   },
+   {
+    "id": "gd-rock",
+    "text": "宝玉坐在一块石上读《会真记》，黛玉肩担花锄、锄挂花囊、手拿花帚",
+    "weight": 3,
+    "source": "原著23"
+   },
+   {
+    "id": "gd-zha",
+    "text": "可见沁芳闸桥与流水，花瓣浮水'流出沁芳闸去'",
+    "weight": 2,
+    "source": "原著23"
+   }
+  ],
+  "huazhong": [
+   {
+    "id": "hz-mound",
+    "text": "园中'畸角上'的花冢土堆，落花覆盖",
+    "weight": 3,
+    "source": "原著23/27"
+   },
+   {
+    "id": "hz-daiyu",
+    "text": "黛玉荷花锄、挂绢袋，独倚花锄",
+    "weight": 2,
+    "source": "原著27"
+   },
+   {
+    "id": "hz-slope",
+    "text": "花冢在山坡后（'犹未转过山坡'），有桃李落花",
+    "weight": 1,
+    "source": "原著27"
+   }
+  ],
+  "dicui": [
+   {
+    "id": "dc-water",
+    "text": "亭盖造在池中水上",
+    "weight": 3,
+    "source": "原著27"
+   },
+   {
+    "id": "dc-bridges",
+    "text": "四面俱是游廊曲桥",
+    "weight": 2,
+    "source": "原著27"
+   },
+   {
+    "id": "dc-lattice",
+    "text": "四面雕镂槅子糊着纸",
+    "weight": 2,
+    "source": "原著27"
+   },
+   {
+    "id": "dc-butterfly",
+    "text": "一双玉色蝴蝶大如团扇，宝钗执扇扑蝶，穿花度柳",
+    "weight": 2,
+    "source": "原著27"
+   }
+  ]
+ }
 }

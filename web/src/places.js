@@ -322,7 +322,7 @@ B.qinfangzha = (p, g) => {
     pier.position.set(sx * 7.5, 0.4, 0); g.add(pier);
   }
   const s = inscription(p.plaque, 2.6); s.position.set(0, 3.9, 2.35); g.add(s);
-  flora.push({ type: 'peach', x: p.x - 14, z: p.z + 10, n: 9, r: 8 });
+  flora.push({ type: 'peach', x: p.x - 26, z: p.z + 12, n: 7, r: 6 });
   flora.push({ type: 'petals', x: p.x - 18, z: p.z + 6, n: 120, r: 9 });
   label(p, 10);
 };
@@ -458,6 +458,43 @@ B.xingye = (p, g) => {
   label(p, 8);
 };
 
+B.gongdu = (p, g) => {
+  // 沁芳闸桥边桃花底下一块石上: 宝玉 reads 会真记, 黛玉 joins him with her flower hoe set aside
+  addProp(p, 'shizu', 0, -1.2, 1.1, 0.5);
+  addProp(p, 'baoyu_read', -0.9, 0.3, 1.25, 0.5);
+  addProp(p, 'daiyu_read', 0.9, 0.2, 1.3, -0.5);
+  addFlora(p, 'peach', -2, -7, 3, 2.5);
+  addFlora(p, 'peach', 5, -4, 2, 1.5);
+  label(p, 6);
+};
+
+B.huazhong = (p, g) => {
+  // 花冢: a small earth mound strewn with petals at the corner of the garden
+  const mound = new THREE.Mesh(new THREE.SphereGeometry(1.4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#7a6248', roughness: 1 }));
+  mound.scale.y = 0.45; g.add(mound);
+  for (let i = 0; i < 40; i++) {
+    const a = Math.random() * Math.PI * 2, r = Math.random() * 1.3;
+    const pet = new THREE.Mesh(new THREE.CircleGeometry(0.05, 5), new THREE.MeshStandardMaterial({ color: i % 3 ? '#f0a3b5' : '#e3485f', side: THREE.DoubleSide }));
+    pet.rotation.x = -Math.PI / 2; pet.position.set(Math.cos(a) * r, 0.62 * Math.sqrt(Math.max(0, 1 - (r / 1.4) ** 2)) + 0.02, Math.sin(a) * r); g.add(pet);
+  }
+  addProp(p, 'daiyu_burial', 1.8, 1.4, 1.65, -2.3);
+  addFlora(p, 'peach', -3, -6, 3, 2.5);
+  label(p, 5);
+};
+
+B.dicui = (p, g) => {
+  // 盖造在池中水上，四面雕镂槅子糊着纸；四面俱是游廊曲桥
+  const plat = new THREE.Mesh(new THREE.BoxGeometry(7, 0.5, 7), MAT.stone); plat.position.y = 0.7; g.add(plat);
+  for (const x of [-3, 3]) for (const z of [-3, 3]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 2.4, 8), MAT.stone); c.position.set(x, -0.6, z); g.add(c); }
+  const h = A.hall({ w: 4.6, d: 4.6, h: 3.0, bays: 1, roofType: 'xieshan', wallMat: MAT.lattice, platform: 0.3, plaque: p.plaque, steps: false, lanterns: 'palace' });
+  h.position.y = 0.95; g.add(collide(h));
+  g.add(A.zigzagBridge([[0, 3.5], [3, 7], [-1, 10], [2, 13.5]]));
+  g.add(A.zigzagBridge([[-3.5, 0], [-8, 2], [-12, -1], [-17, 1]]));
+  addProp(p, 'baochai_fan', 2.2, 14.5, 1.6, 0.8);
+  flora.push({ type: 'shaoyao', x: p.x + 4, z: p.z + 19, n: 40, r: 4 });
+  label(p, 8);
+};
+
 // Whole-garden enclosure: 雪白粉墙，下面虎皮石，随势砌去.
 function gardenWall(root) {
   const [x0, x1] = L.bounds.x, [z0, z1] = L.bounds.z;
@@ -500,7 +537,7 @@ export function buildPlaces() {
     fn(p, g, levels[p.id]);
     if (g.userData.world) { root.add(g.userData.world); continue; }
     let y = levels[p.id] ?? heightAt(p.x, p.z);
-    if (['ouxiang', 'zhuijin', 'xingye'].includes(p.id)) y = 0;
+    if (['ouxiang', 'zhuijin', 'xingye', 'dicui'].includes(p.id)) y = 0;
     if (p.id === 'qinfangting' || p.id === 'liaoting' || p.id === 'qinfangzha') y = 0;
     g.position.set(p.x, y, p.z);
     g.rotation.y = p.rot || 0;

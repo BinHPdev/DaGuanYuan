@@ -74,9 +74,10 @@ export function buildBankRocks() {
     if (waterDepthMetric(x, z) > -2) continue;
     let near = Infinity; for (const pth of L.paths) near = Math.min(near, polyDist(x, z, pth));
     if (near < 2.5 || near > 9) continue;
+    if (L.places.some((q) => (q.type === 'scene' || q.id === 'dicui') && Math.hypot(q.x - x, q.z - z) < 8)) continue;
     add(x, z, 0.4 + rnd() * 0.9);
   }
-  const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: '#a8a597', roughness: 0.95, flatShading: true }), mats.length);
+  const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: '#a8a597', roughness: 0.95 }), mats.length);
   mats.forEach((m, i) => im.setMatrixAt(i, m));
   im.castShadow = im.receiveShadow = true;
   im.name = 'bankRocks';
