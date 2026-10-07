@@ -8,6 +8,8 @@ import { buildWater } from './water.js';
 import { registerFlats, buildPlaces, flora, props, labels, collectColliders } from './places.js';
 import { buildFlora } from './flora.js';
 import { placeProps } from './props.js';
+import { initDynamics, updateDynamics } from './dynamics.js';
+import { waterDepthMetric } from './terrain.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
@@ -94,7 +96,8 @@ const exclusions = L.places.filter((p) => p.w).map((p) => ({ x: p.x, z: p.z, hw:
 for (const [id, hw, hd] of [['zhengdian', 34, 26], ['zhengmen', 14, 10], ['paifang', 9, 5], ['longcui', 12, 12], ['tubi', 10, 10], ['luxue', 9, 6], ['qinfangting', 5, 15], ['cuizhang', 16, 10], ['aojing', 6, 5], ['qinfangzha', 9, 6]]) {
   const p = L.places.find((q) => q.id === id); exclusions.push({ x: p.x, z: p.z, hw, hd });
 }
-scene.add(buildFlora(flora, exclusions));
+const floraGroup = buildFlora(flora, exclusions);
+scene.add(floraGroup);
 
 // Static batching: merge every non-instanced mesh of the architecture by material.
 function batch(root) {
@@ -126,6 +129,7 @@ const batched = batch(placesRoot);
 scene.add(batched);
 
 const propsReady = placeProps(props, scene);
+initDynamics({ scene, camera, terrain, water, flora: floraGroup, heightAt, waterDepthMetric, layout: L, getTimeMode: () => TIMES[timeIdx].name });
 applyTime(0);
 
 // ---------------------------------------------------------------- controls
@@ -333,6 +337,7 @@ function tick() {
   const now = performance.now(); const dt = Math.min((now - last) / 1000, 0.05); last = now;
   water.material.uniforms.uTime.value += dt;
   sky.position.copy(camera.position);
+  updateDynamics(dt, now / 1000);
   if (flight) {
     flight.t += dt / flight.dur;
     const k = flight.t >= 1 ? 1 : 0.5 - 0.5 * Math.cos(Math.PI * flight.t);
