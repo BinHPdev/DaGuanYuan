@@ -107,6 +107,15 @@ function latticeMat_(pattern = 'bubujin', tone = 'red') {
 }
 const PAINT = { hexi: () => MAT.beamHexi, su: () => MAT.beamRich, xuanzi: () => MAT.beam, plain: () => MAT.beamPlain };
 MAT.louchuang = [0, 1, 2, 3].map((k) => std({ map: T.louchuangTexture(k) }));
+// Paper windows and door panes glow warm from the lamps inside at night (window paper lets lamplight through).
+export function setWindowGlow(k) {
+  const mats = [MAT.lattice, MAT.latticeGreen, MAT.latticePlain, MAT.door, MAT.doorGreen, MAT.doorPlain, ...Object.values(LATTICE)];
+  for (const m of mats) {
+    if (!m) continue;
+    if (!m.userData.glowReady) { m.emissive = new THREE.Color('#ffb766'); m.emissiveMap = m.map; m.userData.glowReady = true; m.needsUpdate = true; }
+    m.emissiveIntensity = k;
+  }
+}
 // Lanterns light up at night / 元宵: main.js changes MAT.lantern.emissiveIntensity.
 export const lanternSpots = []; // filled from mesh.userData.lantern after placement
 

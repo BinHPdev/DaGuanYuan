@@ -228,7 +228,7 @@ function willowTemplate() {
   }
   // hanging strands (柳条), hundreds of them from the crown dome
   const pos = [], uv = [], col = [], hangA = [], idx = [];
-  const Rc = 3.3, domeY = H + 2.4, SEG = 6, base = new THREE.Color('#b9cf6a');
+  const Rc = 3.3, domeY = H + 2.4, SEG = 6, base = new THREE.Color('#8fae4e');
   const NS = 440;
   for (let s = 0; s < NS; s++) {
     const th = rnd() * Math.PI * 2, rr = Math.sqrt(rnd()) * Rc;
@@ -383,7 +383,7 @@ export function buildFlora(requests, exclusions) {
         const tpl = willowTemplate();
         const sm = new THREE.InstancedMesh(tpl.solid, windify(vcBase.clone(), { ...WIND.willow, droop: 0, amp: 0.05 }), part.length);
         const cm = new THREE.InstancedMesh(tpl.cards, windify(new THREE.MeshStandardMaterial({
-          vertexColors: true, map: strandTexture(), alphaTest: 0.18, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 0.85,
+          vertexColors: true, map: strandTexture(), alphaTest: 0.18, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 1, envMapIntensity: 0.25,
         }), { ...WIND.willow, hangAttr: true }), part.length);
         part.forEach((m, i) => { sm.setMatrixAt(i, m); cm.setMatrixAt(i, m); });
         sm.castShadow = cm.castShadow = true; sm.receiveShadow = cm.receiveShadow = true;
@@ -433,18 +433,36 @@ function bambooMeshes(mats) {
 function cardMesh(mats, kind) {
   let geo;
   if (kind === 'banana') {
-    const leaves = [];
-    for (let k = 0; k < 7; k++) {
-      const g = new THREE.PlaneGeometry(1.1, 2.6); g.translate(0, 1.3, 0); g.rotateX(-0.6 - rnd() * 0.5); g.translate(0, 1.6, 0); g.rotateY((k / 7) * Math.PI * 2);
-      leaves.push(g);
+    // 芭蕉: a sheathed pseudostem and broad leaves that arch out and droop, split along the veins by wind.
+    const parts = [];
+    const stem = new THREE.CylinderGeometry(0.11, 0.17, 2.2, 8).translate(0, 1.1, 0); stem.deleteAttribute('uv');
+    stem.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(stem.attributes.position.count * 2).fill(0.02), 2));
+    parts.push(stem.toNonIndexed());
+    const nL = 9;
+    for (let k = 0; k < nL; k++) {
+      const len = 2.0 + rnd() * 0.7, wid = 0.55 + rnd() * 0.15, segs = 12;
+      const g = new THREE.PlaneGeometry(wid, len, 2, segs); g.translate(0, len / 2, 0);
+      const pa = g.attributes.position;
+      const rise = 0.9 + rnd() * 0.5, droop = 1.1 + rnd() * 0.6;
+      for (let i = 0; i < pa.count; i++) {
+        const x = pa.getX(i), y = pa.getY(i), t = y / len;
+        // arc: leaves rise then bend over; slight V fold along the midrib
+        const ang = rise * (1 - t) * 0.6 + (Math.PI / 2 - rise * 0.6) * 0 + t * droop;
+        const zz = Math.sin(ang * t) * y * 0.9, yy = Math.cos(ang * t) * y * 0.9;
+        pa.setXYZ(i, x, yy, zz + Math.abs(x) * 0.25);
+      }
+      g.computeVertexNormals();
+      const tilt = new THREE.Matrix4().makeRotationX(0.35 + rnd() * 0.25);
+      g.applyMatrix4(tilt);
+      g.translate(0, 1.7 + rnd() * 0.5, 0);
+      g.rotateY((k / nL) * Math.PI * 2 + rnd() * 0.4);
+      parts.push(g.toNonIndexed());
     }
-    const stem = new THREE.CylinderGeometry(0.12, 0.16, 1.8, 6).translate(0, 0.9, 0);
-    stem.deleteAttribute('normal'); stem.computeVertexNormals();
-    geo = mergeGeometries(leaves.map((g) => g.index ? g.toNonIndexed() : g).concat([stem.toNonIndexed()]));
+    geo = mergeGeometries(parts);
   } else {
     geo = mergeGeometries([new THREE.PlaneGeometry(1.6, 2.4).translate(0, 1.2, 0), new THREE.PlaneGeometry(1.6, 2.4).rotateY(Math.PI / 2).translate(0, 1.2, 0)]);
   }
-  const im = new THREE.InstancedMesh(geo, windify(new THREE.MeshStandardMaterial({ map: leafTexture(kind), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.8 }), WIND[kind]), mats.length);
+  const im = new THREE.InstancedMesh(geo, windify(new THREE.MeshStandardMaterial({ map: kind === 'banana' ? bananaLeafTexture() : leafTexture(kind), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.65 }), WIND[kind]), mats.length);
   mats.forEach((m, i) => im.setMatrixAt(i, m));
   im.castShadow = true;
   return im;
@@ -536,4 +554,29 @@ function lotusMeshes(mats) {
   const bud = new THREE.SphereGeometry(0.09, 10, 8).scale(1, 1.7, 1);
   mk(bud, new THREE.MeshStandardMaterial({ color: '#e98aa0', roughness: 0.5 }), budM, 0);
   return out;
+}
+
+// Banana leaf texture: yellow-green blade, pale midrib, parallel veins, ragged tears from the margin inward.
+function bananaLeafTexture() {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 512;
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, 128, 512);
+  const grad = g.createLinearGradient(0, 0, 128, 0);
+  grad.addColorStop(0, '#5b8f2c'); grad.addColorStop(0.45, '#7cae3e'); grad.addColorStop(0.5, '#cfe08a'); grad.addColorStop(0.55, '#7cae3e'); grad.addColorStop(1, '#4f8226');
+  g.fillStyle = grad;
+  g.beginPath(); g.moveTo(64, 0); g.bezierCurveTo(4, 60, 2, 420, 60, 512); g.lineTo(68, 512); g.bezierCurveTo(126, 420, 124, 60, 64, 0); g.fill();
+  g.strokeStyle = 'rgba(40,70,20,0.35)'; g.lineWidth = 1;
+  for (let y = 8; y < 500; y += 7) { g.beginPath(); g.moveTo(64, y); g.lineTo(4, y - 26); g.moveTo(64, y); g.lineTo(124, y - 26); g.stroke(); }
+  // tears: cut thin wedges from the margin toward the midrib
+  g.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 9; i++) {
+    const y = 80 + Math.random() * 380, side = Math.random() < 0.5 ? -1 : 1, depth = 20 + Math.random() * 38;
+    g.beginPath(); g.moveTo(64 + side * 64, y - 10); g.lineTo(64 + side * (64 - depth), y - 26); g.lineTo(64 + side * 64, y - 4); g.fill();
+  }
+  // a little brown dried margin
+  g.globalCompositeOperation = 'source-atop';
+  g.strokeStyle = 'rgba(150,120,60,0.6)'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(64, 0); g.bezierCurveTo(4, 60, 2, 420, 60, 512); g.stroke();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
 }

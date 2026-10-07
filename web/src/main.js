@@ -17,7 +17,7 @@ import { placeInteriorModels } from './interiors.js';
 import { initDynamics, updateDynamics } from './dynamics.js';
 import { waterDepthMetric } from './terrain.js';
 import { buildBridges, buildBankRocks, buildLanternField, buildGlow } from './details.js';
-import { MAT } from './arch.js';
+import { MAT, setWindowGlow } from './arch.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
@@ -90,6 +90,7 @@ function applyTime(i) {
   moon.visible = !!t.night && !t.yuanxiao;
   // 元宵: every lantern lit, 风灯 along the banks; 月夜: only building lanterns, dimmer
   MAT.lantern.emissiveIntensity = t.yuanxiao ? 2.4 : t.night ? 1.2 : i === 1 ? 0.35 : 0;
+  setWindowGlow(t.yuanxiao ? 0.55 : t.night ? 0.35 : i === 1 ? 0.06 : 0);
   if (lanternField) { lanternField.mesh.visible = !!t.yuanxiao; fieldGlow.visible = !!t.yuanxiao; buildingGlow.visible = !!t.night; }
   $('b-time').textContent = '时辰：' + t.name;
   updateEnvironment();
