@@ -59,7 +59,9 @@ export function buildBankRocks() {
     P.set(x, y, z);
     buckets[v].push(M.compose(P, Q, S).clone());
   };
-  const skip = (x, z) => L.places.some((q) => (q.type === 'scene' || q.id === 'dicui') && Math.hypot(q.x - x, q.z - z) < 8)
+  const FOOT = { zhengdian: 36, zhengmen: 12, paifang: 8, longcui: 14, tubi: 10 }; // building footprints without w/d in layout
+  const skip = (x, z) => L.places.some((q) => ((q.type === 'scene' || q.id === 'dicui') && Math.hypot(q.x - x, q.z - z) < 8)
+    || (q.w && Math.abs(q.x - x) < Math.max(q.w, q.d) / 2 + 2 && Math.abs(q.z - z) < Math.max(q.w, q.d) / 2 + 2) || (FOOT[q.id] && Math.hypot(q.x - x, q.z - z) < FOOT[q.id]))
     || Math.hypot(x - 0, z - 76) < 15 || Math.hypot(x - 163, z + 126.5) < 9 || Math.hypot(x + 102, z + 74) < 9;
   // waterline course: dense, overlapping, partly underwater
   for (let x = -178; x <= 178; x += 1.25) for (let z = -148; z <= 148; z += 1.25) {

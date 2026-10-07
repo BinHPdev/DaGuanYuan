@@ -381,7 +381,7 @@ const aoPass = new GTAOPass(scene, camera, innerWidth, innerHeight);
 aoPass.updateGtaoMaterial({ radius: 1.6, distanceExponent: 1.5, thickness: 2.0, scale: 1.1, samples: 12 });
 aoPass.blendIntensity = 0.6;
 composer.addPass(aoPass);
-bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.85);
+bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.55, 0.5, 0.85); // half-res: bloom is soft anyway
 bloomPass.enabled = false;
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());
@@ -435,6 +435,7 @@ addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
+  bloomPass.setSize(innerWidth / 2, innerHeight / 2);
 });
 tick();
 propsReady.then(() => { const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });

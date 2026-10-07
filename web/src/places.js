@@ -348,6 +348,12 @@ B.zhengdian = (p, g) => {
     side.position.set(sx * 31, 0, 14); side.rotation.y = -sx * Math.PI / 2; g.add(collide(side));
   }
   addProp(p, 'ding', 0, 27, 2.6, 0);
+  // 月台上铜鹿、铜鹤各一对（86 版北京大观园顾恩思义殿前陈设，research/refs.md）
+  const ty = (levels.zhengdian ?? 1.5) + 1.4;
+  for (const sx of [-1, 1]) {
+    addProp(p, 'tonglu', sx * 7, 14, 1.9, sx * 0.3, ty);
+    addProp(p, 'tonghe', sx * 12, 10, 2.3, sx * 0.3, ty);
+  }
   addProp(p, 'shishi', -4.5, 24.5, 2.4, 0);
   addProp(p, 'shishi', 4.5, 24.5, 2.4, 0);
   // 青松拂檐
