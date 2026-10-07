@@ -427,6 +427,7 @@ B.yihong = (p, g) => {
   const gh = A.gateHouse({ w: 3.6, d: 2.6, plaque: '怡紅院' }); gh.position.z = d / 2; g.add(gh);
   // 竹篱花障编就的月洞门 outside, among 碧桃
   const mg = A.moonGate({ w: 6, h: 3, r: 1.35, t: 0.35, mat: MAT.bamboo }); mg.position.z = d / 2 + 8; g.add(mg);
+  addProp(p, 'yahuan_tray', 3.2, d / 2 + 4.5, 1.55, 0.3); // a maid bringing tea to 怡红院
   addFlora(p, 'peach', -6, d / 2 + 10, 6, 5);
   addFlora(p, 'peach', 7, d / 2 + 10, 6, 5);
   // 两边都是游廊相接
@@ -531,6 +532,8 @@ B.luxue = (p, g) => {
   g.add(collide(h));
   A.addPlaque(h, p.plaque, { y: 2.2, z: 3.1, width: 2.4, bg: '#4a3a24', fg: '#e3d3a2' });
   A.addPlaque(h, '荻蘆夜雪', { y: 2.2, z: 3.1, x: 4.4, width: 2.0, bg: '#4a3a24', fg: '#e3d3a2' }); // 第十八回四字匾之一（位置为推测）
+  // 第四十九回：丫鬟婆子正在那里扫雪开径
+  addProp(p, 'yahuan_sweep', -5, 8.5, 1.55, 0.6);
   g.add(A.fence([[-9, 6], [9, 6], [9, -5]], { mat: MAT.wood }));
   flora.push({ type: 'reed', x: p.x, z: p.z - 7, n: 260, r: 12 });
   flora.push({ type: 'reed', x: p.x + 10, z: p.z - 14, n: 160, r: 9 });

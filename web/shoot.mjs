@@ -13,6 +13,7 @@ for (const v of views) {
   await p.evaluate((v) => {
     const d = window.__dgy;
     if (v === 'overview') return;
+    if (v.startsWith('day:')) { const [x,y,z,tx,ty,tz] = v.slice(4).split('_').map(Number); d.setTimeByName('昼'); d.setMode('orbit'); d.flyTo({ pos: new d.camera.position.constructor(x,y,z), target: new d.camera.position.constructor(tx,ty,tz) }, 0.01); return; }
     if (v.startsWith('snow:')) { const [x,y,z,tx,ty,tz] = v.slice(5).split('_').map(Number); d.setTimeByName('雪'); d.setMode('orbit'); d.flyTo({ pos: new d.camera.position.constructor(x,y,z), target: new d.camera.position.constructor(tx,ty,tz) }, 0.01); return; }
     if (v === 'walk') { d.setMode('walk'); return; }
     if (v === 'yuanxiao') { d.setTimeByName('元宵'); d.setMode('orbit'); d.flyTo({pos: new d.camera.position.constructor(60,70,40), target: new d.camera.position.constructor(0,0,-60)}, 0.01); return; }

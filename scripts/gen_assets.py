@@ -26,14 +26,19 @@ def run(endpoint, payload, timeout=900):
 
 def gen(name, prompt):
     glb = os.path.join(OUT, f"{name}.glb")
-    if os.path.exists(glb):
+    if os.path.exists(glb) and os.path.getsize(glb) > 1000:
         return name, "cached"
     img = run("fal-ai/nano-banana-pro", {"prompt": prompt + STYLE, "aspect_ratio": "1:1", "num_images": 1})
     url = img["images"][0]["url"]
     open(os.path.join(OUT, f"{name}.png"), "wb").write(requests.get(url, timeout=120).content)
     m = run("tripo3d/tripo/v2.5/image-to-3d", {"image_url": url, "texture": "standard", "face_limit": 20000})
     mesh = m.get("pbr_model") or m.get("model_mesh") or m.get("base_model")
-    open(glb, "wb").write(requests.get(mesh["url"], timeout=300).content)
+    if not mesh or not mesh.get("url"):
+        raise RuntimeError(f"no mesh in Tripo response: {list(m)}")
+    data = requests.get(mesh["url"], timeout=300).content
+    if len(data) < 1000:
+        raise RuntimeError("empty mesh download")
+    open(glb, "wb").write(data)
     return name, "ok"
 
 

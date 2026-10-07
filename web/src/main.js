@@ -99,6 +99,8 @@ function applyTime(i) {
   setWindowGlow(t.yuanxiao ? 0.55 : t.night ? 0.35 : i === 1 ? 0.06 : 0);
   setInteriorLight(!!t.night, !!t.yuanxiao);
   snowUniform.value = t.snow ? 1 : 0;
+  water.material.uniforms.uSnow.value = t.snow ? 1 : 0; // pond and streams freeze
+  if (boatGlow) boatGlow.visible = !!t.yuanxiao;
   if (snowfall) snowfall.visible = !!t.snow;
   if (lotusGroup) lotusGroup.forEach((o) => (o.visible = !t.snow)); // 荷叶 gone in winter
   renderer.shadowMap.needsUpdate = true;
@@ -170,7 +172,7 @@ function batch(root) {
 }
 scene.remove(placesRoot);
 const lanternSpots = [];
-let snowfall = null, lotusGroup = null;
+let snowfall = null, lotusGroup = null, boatGlow = null;
 const batched = batch(placesRoot);
 scene.add(batched);
 const interiorsReady = placeInteriorModels(placesRoot, scene);
@@ -179,6 +181,11 @@ lanternField = buildLanternField();
 fieldGlow = buildGlow(lanternField.points, 3.4);
 buildingGlow = buildGlow(lanternSpots, 4.5);
 scene.add(lanternField.mesh, fieldGlow, buildingGlow);
+// 第十八回：船上亦系各种精致盆景诸灯 — lamps strung along the pleasure boats on 元宵 night
+const boatLamps = [];
+for (const pr of props) if (pr.model === 'fang') for (let k = -3; k <= 3; k++) boatLamps.push([pr.x + Math.sin(pr.rot) * k * 1.2, 2.6 + (k % 2) * 0.2, pr.z + Math.cos(pr.rot) * k * 1.2]);
+boatGlow = buildGlow(boatLamps, 3.0);
+scene.add(boatGlow);
 snowfall = buildSnowfall();
 scene.add(snowfall);
 lotusGroup = floraGroup.children.filter((o) => o.userData.lotus);

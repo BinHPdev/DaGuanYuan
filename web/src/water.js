@@ -202,7 +202,14 @@ export function buildWater(sunDir) {
         float foam = clamp(streak + white * 1.3, 0.0, 1.0);
         vec3 foamCol = mix(vec3(0.9, 0.94, 0.93), sky, 0.25);
         col = mix(col, foamCol, foam * 0.85);
-        gl_FragColor = vec4(col, clamp(0.5 + 0.38 * smoothstep(0.0, 0.5, depth) + 0.3 * fres + foam * 0.2, 0.0, 0.97));
+        // winter: matte, pale ice with cracks; the fast water at the sluice and cave stays open
+        float openW = smoothstep(0.25, 0.6, foamMask);
+        float crack = smoothstep(0.93, 1.0, abs(sin(dot(p, vec2(0.37, 0.21)) * 3.1 + hgt(p * 0.3) * 4.0)));
+        vec3 ice = mix(vec3(0.80, 0.86, 0.89), vec3(0.60, 0.68, 0.73), smoothstep(0.1, 0.8, depth)) + 0.06 * hgt(p * 0.8) - crack * 0.1;
+        float frozen = uSnow * (1.0 - openW);
+        col = mix(col, ice, frozen);
+        float alpha = clamp(0.5 + 0.38 * smoothstep(0.0, 0.5, depth) + 0.3 * fres + foam * 0.2, 0.0, 0.97);
+        gl_FragColor = vec4(col, mix(alpha, 0.98, frozen));
         #include <fog_fragment>
       }`,
   });
