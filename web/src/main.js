@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import L from './layout.json';
 import { buildTerrain, heightAt, GROUND } from './terrain.js';
 import { buildWater } from './water.js';
@@ -28,7 +33,6 @@ renderer.domElement.className = 'gl';
 app.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environmentIntensity = 0.2;
 const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.3, 2500);
 camera.position.set(115, 150, 255);
@@ -41,7 +45,8 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(2000, 32, 16), new THREE.Sha
   fragmentShader: `uniform vec3 uTop, uHor, uGlow, uSun; varying vec3 vDir;
     void main(){ float h = max(vDir.y, 0.0); vec3 c = mix(uHor, uTop, pow(h, 0.55));
       c += uGlow * pow(max(dot(normalize(vDir), normalize(uSun)), 0.0), 24.0) * 0.6;
-      gl_FragColor = vec4(c, 1.0); }`,
+      // colours were tuned for direct output; the post chain applies sRGB encoding, so pre-linearise
+      gl_FragColor = vec4(pow(c, vec3(2.0)), 1.0); }`,
 }));
 sky.renderOrder = -1;
 scene.add(sky);
@@ -63,6 +68,7 @@ const TIMES = [
   { name: '月夜', elev: 38, az: 120, sun: '#a9c0ea', int: 0.7, hemi: 0.22, fog: '#1d2633', top: '#0b1226', hor: '#24304a', glow: '#000000', exp: 0.7, night: true },
 ];
 let timeIdx = 0;
+let bloomPass = null;
 const water = buildWater(new THREE.Vector3(0, 1, 0));
 function applyTime(i) {
   const t = TIMES[i];
@@ -75,7 +81,7 @@ function applyTime(i) {
   sun.position.copy(dir).multiplyScalar(400);
   sun.color.set(t.sun); sun.intensity = t.int;
   hemi.intensity = t.hemi;
-  scene.environmentIntensity = t.night ? 0.05 : 0.2;
+  scene.environmentIntensity = t.night ? 0.15 : 0.6;
   scene.fog.color.set(t.fog);
   renderer.toneMappingExposure = t.exp;
   water.material.uniforms.uSun.value.copy(dir);
@@ -85,10 +91,25 @@ function applyTime(i) {
   MAT.lantern.emissiveIntensity = t.yuanxiao ? 2.4 : t.night ? 1.2 : i === 1 ? 0.35 : 0;
   if (lanternField) { lanternField.mesh.visible = !!t.yuanxiao; fieldGlow.visible = !!t.yuanxiao; buildingGlow.visible = !!t.night; }
   $('b-time').textContent = '时辰：' + t.name;
+  updateEnvironment();
+  if (bloomPass) { bloomPass.enabled = !!t.night; bloomPass.strength = t.yuanxiao ? 0.9 : 0.55; }
 }
 const moon = new THREE.Mesh(new THREE.SphereGeometry(14, 24, 16), new THREE.MeshBasicMaterial({ color: '#fbf6dc', fog: false }));
 moon.position.set(-300, 260, -700);
 scene.add(moon);
+
+// Image-based light from the current sky so glossy tiles, lacquer and water pick up the real sky colour.
+const pmrem = new THREE.PMREMGenerator(renderer);
+let envRT = null;
+function updateEnvironment() {
+  const envScene = new THREE.Scene();
+  const dome = sky.clone(); dome.position.set(0, 0, 0); envScene.add(dome);
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(1500, 16).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: TIMES[timeIdx].night ? '#10140f' : '#5f6e45' }));
+  ground.position.y = -5; envScene.add(ground);
+  if (envRT) envRT.dispose();
+  envRT = pmrem.fromScene(envScene, 0.02, 1, 3000);
+  scene.environment = envRT.texture;
+}
 
 // ---------------------------------------------------------------- world
 registerFlats();
@@ -346,6 +367,29 @@ mm.addEventListener('click', (e) => {
 });
 
 // ---------------------------------------------------------------- loop
+// ---------------------------------------------------------------- post-processing
+// 高: multisampled render + ground-truth AO + bloom for lanterns at night; 中: plain render.
+const rt = new THREE.WebGLRenderTarget(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio(), { type: THREE.HalfFloatType, samples: 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.addPass(new RenderPass(scene, camera));
+const aoPass = new GTAOPass(scene, camera, innerWidth, innerHeight);
+aoPass.updateGtaoMaterial({ radius: 1.6, distanceExponent: 1.5, thickness: 2.0, scale: 1.1, samples: 12 });
+aoPass.blendIntensity = 0.85;
+composer.addPass(aoPass);
+bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.85);
+bloomPass.enabled = false;
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+let quality = (() => { try { return localStorage.getItem('dgy-quality') || 'high'; } catch { return 'high'; } })();
+function setQuality(q) {
+  quality = q;
+  try { localStorage.setItem('dgy-quality', q); } catch {}
+  $('b-quality').textContent = '画质：' + (q === 'high' ? '高' : '中');
+}
+$('b-quality').onclick = () => setQuality(quality === 'high' ? 'mid' : 'high');
+setQuality(quality);
+applyTime(timeIdx);
+
 let last = performance.now();
 const fwd = new THREE.Vector3(), right = new THREE.Vector3();
 function tick() {
@@ -379,13 +423,14 @@ function tick() {
   }
   updateLabels();
   drawMinimap();
-  renderer.render(scene, camera);
+  if (quality === 'high') composer.render(dt); else renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
 });
 tick();
 propsReady.then(() => { const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
-window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime: setTime, setTimeByName: (n) => setTime(Math.max(0, TIMES.findIndex((t) => t.name === n))), orbit, showCard, get flight() { return flight; } };
+window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime: setTime, setQuality, setTimeByName: (n) => setTime(Math.max(0, TIMES.findIndex((t) => t.name === n))), orbit, showCard, get flight() { return flight; } };
