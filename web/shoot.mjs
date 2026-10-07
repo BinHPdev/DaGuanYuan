@@ -14,7 +14,8 @@ for (const v of views) {
     const d = window.__dgy;
     if (v === 'overview') return;
     if (v === 'walk') { d.setMode('walk'); return; }
-    if (v === 'night') { d.applyTime(2); d.setMode('orbit'); d.flyTo(d.viewFor(d.PLACE.xiaoxiang, 60), 0.01); return; }
+    if (v === 'yuanxiao') { d.applyTime(2); d.setMode('orbit'); d.flyTo({pos: new d.camera.position.constructor(60,70,40), target: new d.camera.position.constructor(0,0,-60)}, 0.01); return; }
+    if (v === 'night') { d.applyTime(3); d.setMode('orbit'); d.flyTo(d.viewFor(d.PLACE.xiaoxiang, 60), 0.01); return; }
     if (v === 'dusk') { d.applyTime(1); d.setMode('orbit'); d.flyTo({pos: new d.camera.position.constructor(-60,60,120), target: new d.camera.position.constructor(0,0,-60)}, 0.01); return; }
     if (v.startsWith('tour')) { d.setMode('tour'); d.goStop(+v.slice(4)); return; }
     if (v.startsWith('cam:')) { const [x,y,z,tx,ty,tz] = v.slice(4).split('_').map(Number); d.flyTo({ pos: new d.camera.position.constructor(x,y,z), target: new d.camera.position.constructor(tx,ty,tz) }, 0.01); return; }

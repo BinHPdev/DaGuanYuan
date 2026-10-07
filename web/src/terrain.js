@@ -98,7 +98,19 @@ export function buildTerrain() {
   }
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
+  // fine grass/soil detail multiplied over the vertex colours so the ground stops reading as clay
+  const c2 = document.createElement('canvas'); c2.width = c2.height = 256;
+  const g2 = c2.getContext('2d');
+  g2.fillStyle = '#e6e6e6'; g2.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 5000; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256, v = 195 + Math.random() * 60;
+    g2.strokeStyle = `rgb(${v},${v},${v})`; g2.lineWidth = 1;
+    g2.beginPath(); g2.moveTo(x, y); g2.lineTo(x + (Math.random() - 0.5) * 3, y - 2 - Math.random() * 4); g2.stroke();
+  }
+  const detail = new THREE.CanvasTexture(c2);
+  detail.wrapS = detail.wrapT = THREE.RepeatWrapping; detail.repeat.set(W / 6, D / 6); detail.anisotropy = 8;
+  detail.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: detail, roughness: 0.95 }));
   mesh.receiveShadow = true;
   mesh.name = 'terrain';
   return mesh;

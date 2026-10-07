@@ -123,12 +123,16 @@ B.xiaoxiang = (p, g, lv) => {
   const gh = A.gateHouse({ w: 3.4, d: 2.4, plaque: '瀟湘館', colMat: MAT.columnGreen });
   gh.position.z = d / 2; g.add(gh);
   // 一明两暗 small three-bay hall
-  const main = A.hall({ w: 10, d: 6, h: 3.3, bays: 3, roofType: 'juanpeng', colMat: MAT.columnGreen, latticeMat: MAT.latticeGreen, plaque: p.plaque, couplet: p.couplet });
+  const main = A.hall({ w: 10, d: 6, h: 3.3, bays: 3, roofType: 'juanpeng', colMat: MAT.columnGreen, latticeMat: MAT.latticeGreen, plaque: p.plaque, couplet: p.couplet,
+    hangMat: MAT.hangLatticeGreen, sillMat: MAT.wall });
   main.position.z = -3; g.add(collide(main));
   // 曲折游廊 from gate to hall
   g.add(A.corridor([[-1.5, d / 2 - 2], [-6, 9], [-6, 3], [-4, 1.2]], { colMat: MAT.columnGreen }));
   // 后院: two little 退步 rooms, pear + banana
-  const back = A.hall({ w: 6, d: 4, h: 2.8, bays: 2, roofType: 'yingshan', colMat: MAT.columnGreen, latticeMat: MAT.latticeGreen, platform: 0.4 });
+  const back = A.hall({ w: 6, d: 4, h: 2.8, bays: 2, roofType: 'yingshan', colMat: MAT.columnGreen, latticeMat: MAT.latticeGreen, platform: 0.4,
+    plaque: '梨花春雨', lanterns: false, hangMat: MAT.hangLatticeGreen }); // 第十八回所列四字匾之一，置于梨花后院（位置为推测）
+  // 阶下石子漫成甬路
+  const path = A.pavement(2.2, 12, MAT.pebble, 2.2); path.position.set(1.5, 0.04, d / 2 - 7.5); g.add(path);
   back.position.set(6, 0, -d / 2 + 4); g.add(collide(back));
   addFlora(p, 'pear', -7, -d / 2 + 5, 2, 2);
   addFlora(p, 'banana', -3, -d / 2 + 4, 3, 1.6);
@@ -152,7 +156,7 @@ B.daoxiang = (p, g) => {
   collide(g.add(A.enclosure(w, d, { h: 1.9, t: 0.6, mat: MAT.wallMud, base: MAT.wallMud, baseH: 0, cap: MAT.thatch, gateW: 2.6 })) && g.children.at(-1));
   const hut = (x, z, ww, r = 0) => {
     const h = A.hall({ w: ww, d: 5.5, h: 2.7, bays: 3, roofType: 'thatch', roofMat: MAT.thatch, colMat: MAT.columnPlain, beamMat: MAT.beamPlain,
-      wallMat: MAT.wallMud, latticeMat: A.MAT.lattice, platform: 0.3, platMat: MAT.wallMud, roofH: 2.8 });
+      wallMat: MAT.wallMud, latticeMat: A.MAT.lattice, platform: 0.3, platMat: MAT.wallMud, roofH: 2.8, rustic: true, steps: false });
     h.position.set(x, 0, z); h.rotation.y = r; g.add(collide(h)); return h;
   };
   const main = hut(0, -8, 11);
@@ -171,7 +175,13 @@ B.daoxiang = (p, g) => {
   sweep.position.set(wx + 1.2, 3, wz); sweep.rotation.z = 1.2; g.add(sweep);
   // 酒幌, 石碣
   const flag = wineFlag(p.plaque); flag.position.set(-w / 2 - 3, 0, d / 2 + 4); g.add(flag);
-  addProp(p, 'bei', 6, d / 2 + 6, 2.2, 0.2);
+  addProp(p, 'bei', 6, d / 2 + 6, 2.2, 0);
+  // 石碣 inscription (路旁有一石碣，亦为留题之备)
+  const tx = T.coupletTexture('稻香村', { bg: '#8d8a80', fg: '#2b2a26', border: '#8d8a80' });
+  const ins = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5 / tx.userData.aspect), new THREE.MeshStandardMaterial({ map: tx }));
+  ins.userData.keepSeparate = true; ins.position.set(6, 1.35, d / 2 + 6.38); g.add(ins);
+  // 鹅鸭鸡类 pen and a vegetable plot fence
+  g.add(A.fence([[8, -4], [16, -4], [16, 6], [8, 6], [8, -4]], { h: 0.9 }));
   // 几百株杏花, 桑榆槿柘
   addFlora(p, 'apricot', 0, 0, 90, w * 0.9);
   addFlora(p, 'mulberry', -w / 2 - 8, 6, 10, 6);
@@ -238,6 +248,7 @@ B.hengwu = (p, g) => {
   const main = A.hall({ w: 15, d: 7, h: 3.5, bays: 5, roofType: 'juanpeng', corridor: 1.4, latticeMat: MAT.latticeGreen, colMat: MAT.columnGreen,
     plaque: p.plaque, couplet: p.couplet });
   main.position.z = -d / 2 + 7; g.add(collide(main));
+  g.add(A.pavement(w - 2, d - 2, MAT.paving));
   // 超手游廊 on both sides
   g.add(A.corridor([[-w / 2 + 2.2, d / 2 - 3], [-w / 2 + 2.2, -d / 2 + 9]]));
   g.add(A.corridor([[w / 2 - 2.2, d / 2 - 3], [w / 2 - 2.2, -d / 2 + 9]]));
@@ -247,37 +258,54 @@ B.hengwu = (p, g) => {
 };
 
 B.zhengdian = (p, g) => {
-  // 崇阁巍峨，层楼高起，面面琳宫合抱，迢迢复道萦纡
-  const terrace = new THREE.Mesh(new THREE.BoxGeometry(46, 1.6, 22), MAT.marble);
-  terrace.position.set(0, 0.8, -6); g.add(terrace);
-  const bal = A.balustrade([[-23, 5], [-23, -17], [23, -17], [23, 5], [3, 5]]); bal.position.y = 1.6; g.add(bal);
-  const bal2 = A.balustrade([[-3, 5], [-23, 5]]); bal2.position.y = 1.6; g.add(bal2);
-  const steps = new THREE.Mesh(new THREE.BoxGeometry(6, 0.8, 3), MAT.marble); steps.position.set(0, 0.4, 6.5); g.add(steps);
-  const main = A.lou({ w: 22, d: 11, h1: 4.6, h2: 4.0, bays: 7, roofType: 'xieshan', roofMat: MAT.tileGreen, plaque: '大觀樓' });
-  main.position.set(0, 1.6, -8); g.add(collide(main));
-  A.addPlaque(main, p.plaque, { y: 0.6 + 3.6, z: 11 / 2 + 0.3, width: 4.2 });
+  // 第十七回：崇阁巍峨，层楼高起，面面琳宫合抱，迢迢复道萦纡，青松拂檐，玉栏绕砌，金辉兽面，彩焕螭头。
+  // 第十八回：正殿匾"顾恩思义"及联；正楼曰大观楼，东面飞楼曰缀锦阁，西面斜楼曰含芳阁；月台。
+  // 月台 (marble terrace) in front of the main hall
+  const terrace = new THREE.Mesh(new THREE.BoxGeometry(34, 1.4, 14), MAT.marble);
+  terrace.position.set(0, 0.7, 13); g.add(terrace);
+  const bal = A.balustrade([[-3, 20], [-17, 20], [-17, 6], [17, 6], [17, 20], [3, 20]]); bal.position.y = 1.4; g.add(bal);
+  for (const sx of [-1, 1]) { // 两陛: side stairs
+    const st = new THREE.Mesh(new THREE.BoxGeometry(5, 0.7, 3), MAT.marble); st.position.set(sx * 11, 0.35, 21.5); g.add(st);
+  }
+  const ramp = new THREE.Mesh(new THREE.BoxGeometry(5, 0.7, 3), MAT.marble); ramp.position.set(0, 0.35, 21.5); g.add(ramp);
+  // 正殿 · 顾恩思义 — seven bays, 斗拱, green glazed tiles
+  const hallMain = A.hall({ w: 26, d: 12, h: 5.2, bays: 7, roofType: 'xieshan', roofMat: MAT.tileGreen, dougong: true,
+    platform: 1.4, platMat: MAT.marble, plaque: '顧恩思義', plaqueOpts: { width: 4.4 }, lanterns: 'palace', roofH: 5.2,
+    couplet: ['天地啟宏慈赤子蒼頭同感戴', '古今垂曠典九州萬國被恩榮'] });
+  hallMain.position.z = 0; g.add(collide(hallMain));
+  // 大观楼 behind, flanked by 缀锦阁 (east) and 含芳阁 (west)
+  const main = A.lou({ w: 22, d: 10, h1: 4.6, h2: 4.0, bays: 7, roofType: 'xieshan', roofMat: MAT.tileGreen, plaque: '大觀樓' });
+  main.position.set(0, 0, -22); g.add(collide(main));
   const east = A.lou({ w: 10, d: 7, h1: 3.8, h2: 3.4, bays: 3, roofType: 'xieshan', roofMat: MAT.tileGreen, plaque: '綴錦閣' });
-  east.position.set(19, 0, 10); east.rotation.y = -Math.PI / 2; g.add(collide(east));
+  east.position.set(25, 0, -16); east.rotation.y = -Math.PI / 2; g.add(collide(east));
   const west = A.lou({ w: 10, d: 7, h1: 3.8, h2: 3.4, bays: 3, roofType: 'xieshan', roofMat: MAT.tileGreen, plaque: '含芳閣' });
-  west.position.set(-19, 0, 10); west.rotation.y = Math.PI / 2; g.add(collide(west));
-  // 复道: corridors linking the side towers to the terrace
-  g.add(A.corridor([[-23, 3], [-19, 3], [-19, 5.5]]));
-  g.add(A.corridor([[23, 3], [19, 3], [19, 5.5]]));
-  g.add(A.corridor([[-19, 14.5], [-19, 22], [-8, 24]]));
-  g.add(A.corridor([[19, 14.5], [19, 22], [8, 24]]));
-  addProp(p, 'ding', 0, 14, 2.6, 0);
-  addProp(p, 'shishi', -4.5, 9.5, 2.4, 0);
-  addProp(p, 'shishi', 4.5, 9.5, 2.4, 0);
+  west.position.set(-25, 0, -16); west.rotation.y = Math.PI / 2; g.add(collide(west));
+  // 复道萦纡: corridors tie hall, tower and side pavilions together
+  g.add(A.corridor([[-13.5, -2], [-21, -2], [-21, -11]]));
+  g.add(A.corridor([[13.5, -2], [21, -2], [21, -11]]));
+  g.add(A.corridor([[-25, -21], [-25, -26], [-11, -26]]));
+  g.add(A.corridor([[25, -21], [25, -26], [11, -26]]));
+  g.add(A.corridor([[-17, 8], [-26, 8], [-26, 22], [-12, 24]]));
+  g.add(A.corridor([[17, 8], [26, 8], [26, 22], [12, 24]]));
+  // 东西配殿
+  for (const sx of [-1, 1]) {
+    const side = A.hall({ w: 12, d: 6, h: 3.8, bays: 3, roofType: 'xieshan', roofMat: MAT.tileGreen, lanterns: 'palace' });
+    side.position.set(sx * 31, 0, 14); side.rotation.y = -sx * Math.PI / 2; g.add(collide(side));
+  }
+  addProp(p, 'ding', 0, 27, 2.6, 0);
+  addProp(p, 'shishi', -4.5, 24.5, 2.4, 0);
+  addProp(p, 'shishi', 4.5, 24.5, 2.4, 0);
   // 青松拂檐
-  addFlora(p, 'pine', -30, -4, 8, 6);
-  addFlora(p, 'pine', 30, -4, 8, 6);
-  addFlora(p, 'pine', 0, -24, 10, 18);
+  addFlora(p, 'pine', -36, -4, 8, 6);
+  addFlora(p, 'pine', 36, -4, 8, 6);
+  addFlora(p, 'pine', 0, -32, 8, 14);
+  { const pv = A.pavement(52, 30, MAT.paving, 3); pv.position.set(0, 0.04, 8); g.add(pv); }
   label(p, 24);
 };
 
 B.paifang = (p, g) => {
   addProp(p, 'paifang', 0, 0, 9.5, 0);
-  const pl = A.addPlaque(g, p.plaque, { y: 6.1, z: 0.65, width: 3.1, bg: '#1d3a5a' });
+  const pl = A.addPlaque(g, '省親別墅', { y: 6.1, z: 0.65, width: 3.1, bg: '#1d3a5a' }); // 元妃命将'天仙宝境'换作'省亲别墅'（第十八回）
   pl.userData.paifangPlaque = true;
   label(p, 13);
 };
@@ -309,7 +337,8 @@ B.yihong = (p, g) => {
   g.add(A.corridor([[-2.4, d / 2 - 1.5], [-w / 2 + 2, d / 2 - 1.5], [-w / 2 + 2, -2]]));
   g.add(A.corridor([[2.4, d / 2 - 1.5], [w / 2 - 2, d / 2 - 1.5], [w / 2 - 2, -2]]));
   // main hall with 抱厦
-  const main = A.hall({ w: 17, d: 8, h: 3.8, bays: 5, roofType: 'xieshan', plaque: p.plaque });
+  const yard = A.pavement(w - 6, 12, MAT.paving); yard.position.z = 6; g.add(yard);
+  const main = A.hall({ w: 17, d: 8, h: 3.8, bays: 5, roofType: 'xieshan', plaque: p.plaque, lanterns: 'palace' });
   main.position.z = -6; g.add(collide(main));
   const baosha = A.hall({ w: 7, d: 3.4, h: 3.3, bays: 3, roofType: 'juanpeng', frontOpen: true, backWall: false, sideWalls: false, platform: 0.6 });
   baosha.position.z = -6 + 4 + 1.6; g.add(baosha);
@@ -329,7 +358,9 @@ B.qiushuang = (p, g) => {
   const { w, d } = p;
   collide(g.add(A.enclosure(w, d, { h: 3.2, gateW: 3.2 })) && g.children.at(-1));
   const gh = A.gateHouse({ w: 3.2, d: 2.4, plaque: '秋爽齋' }); gh.position.z = d / 2; g.add(gh);
-  const main = A.hall({ w: 12, d: 7, h: 3.8, bays: 3, roofType: 'xieshan', plaque: '曉翠堂' }); main.position.z = -5; g.add(collide(main));
+  const main = A.hall({ w: 12, d: 7, h: 3.8, bays: 3, roofType: 'xieshan', plaque: '曉翠堂', couplet: p.couplet }); main.position.z = -5; g.add(collide(main));
+  A.addPlaque(gh, '桐剪秋風', { y: 2.2, z: -1.35, width: 2.2 }).rotation.y = Math.PI; // 第十八回四字匾之一，梧桐所在（位置为推测）
+  const yard = A.pavement(w - 2, d - 10, MAT.paving); yard.position.z = 4; g.add(yard);
   addFlora(p, 'wutong', -8, 3, 3, 3);
   addFlora(p, 'banana', 8, 4, 4, 2);
   label(p, 11);
@@ -383,9 +414,10 @@ B.aojing = (p, g) => {
 B.luxue = (p, g) => {
   // 一带几间，茅檐土壁，槿篱竹牖
   const h = A.hall({ w: 13, d: 5.5, h: 2.7, bays: 4, roofType: 'thatch', roofMat: MAT.thatch, wallMat: MAT.wallMud, colMat: MAT.columnPlain,
-    beamMat: MAT.beamPlain, latticeMat: MAT.latticeGreen, platform: 0.4, platMat: MAT.wallMud, roofH: 2.6 });
+    beamMat: MAT.beamPlain, latticeMat: MAT.latticeGreen, platform: 0.4, platMat: MAT.wallMud, roofH: 2.6, rustic: true, steps: false });
   g.add(collide(h));
   A.addPlaque(h, p.plaque, { y: 2.2, z: 3.1, width: 2.4, bg: '#4a3a24', fg: '#e3d3a2' });
+  A.addPlaque(h, '荻蘆夜雪', { y: 2.2, z: 3.1, x: 4.4, width: 2.0, bg: '#4a3a24', fg: '#e3d3a2' }); // 第十八回四字匾之一（位置为推测）
   g.add(A.fence([[-9, 6], [9, 6], [9, -5]], { mat: MAT.wood }));
   flora.push({ type: 'reed', x: p.x, z: p.z - 7, n: 260, r: 12 });
   flora.push({ type: 'reed', x: p.x + 10, z: p.z - 14, n: 160, r: 9 });
@@ -395,7 +427,8 @@ B.luxue = (p, g) => {
 B.longcui = (p, g) => {
   collide(g.add(A.enclosure(22, 20, { h: 3.2, gateW: 3 })) && g.children.at(-1));
   const gh = A.gateHouse({ w: 3, d: 2.2, plaque: p.plaque }); gh.position.z = 10; g.add(gh);
-  const hall = A.hall({ w: 11, d: 7, h: 3.6, bays: 3, roofType: 'xieshan', plaque: '佛殿' }); hall.position.z = -4; g.add(collide(hall));
+  const hall = A.hall({ w: 11, d: 7, h: 3.6, bays: 3, roofType: 'xieshan', plaque: '佛殿', lanterns: 'palace' }); hall.position.z = -4; g.add(collide(hall));
+  const yard = A.pavement(18, 8, MAT.paving); yard.position.z = 5; g.add(yard);
   addFlora(p, 'plum', 0, 4, 14, 7); // 十数株红梅
   label(p, 11);
 };

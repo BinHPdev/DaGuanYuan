@@ -10,6 +10,8 @@ import { buildFlora } from './flora.js';
 import { placeProps } from './props.js';
 import { initDynamics, updateDynamics } from './dynamics.js';
 import { waterDepthMetric } from './terrain.js';
+import { buildBridges, buildBankRocks, buildLanternField, buildGlow } from './details.js';
+import { MAT } from './arch.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
@@ -57,6 +59,7 @@ scene.fog = new THREE.Fog('#cfd8d6', 260, 900);
 const TIMES = [
   { name: '昼', elev: 48, az: 150, sun: '#fff3dd', int: 2.4, hemi: 0.9, fog: '#cdd9dc', top: '#6f9cc4', hor: '#d6e2e4', glow: '#fff4d6', exp: 0.85 },
   { name: '暮', elev: 7, az: 240, sun: '#ffb071', int: 1.8, hemi: 0.5, fog: '#d9b49a', top: '#5a6f9a', hor: '#f0b88a', glow: '#ffcf8a', exp: 0.85 },
+  { name: '元宵', elev: 30, az: 60, sun: '#8ea6d6', int: 0.5, hemi: 0.3, fog: '#1a1f2c', top: '#070b18', hor: '#2a2236', glow: '#000000', exp: 0.75, night: true, yuanxiao: true },
   { name: '月夜', elev: 38, az: 120, sun: '#a9c0ea', int: 0.7, hemi: 0.22, fog: '#1d2633', top: '#0b1226', hor: '#24304a', glow: '#000000', exp: 0.7, night: true },
 ];
 let timeIdx = 0;
@@ -77,7 +80,10 @@ function applyTime(i) {
   renderer.toneMappingExposure = t.exp;
   water.material.uniforms.uSun.value.copy(dir);
   water.material.uniforms.uSky.value.set(t.night ? '#2a3550' : i === 1 ? '#e8b48e' : '#b9d0dc');
-  moon.visible = !!t.night;
+  moon.visible = !!t.night && !t.yuanxiao;
+  // 元宵: every lantern lit, 风灯 along the banks; 月夜: only building lanterns, dimmer
+  MAT.lantern.emissiveIntensity = t.yuanxiao ? 2.4 : t.night ? 1.2 : i === 1 ? 0.35 : 0;
+  if (lanternField) { lanternField.mesh.visible = !!t.yuanxiao; fieldGlow.visible = !!t.yuanxiao; buildingGlow.visible = !!t.night; }
   $('b-time').textContent = '时辰：' + t.name;
 }
 const moon = new THREE.Mesh(new THREE.SphereGeometry(14, 24, 16), new THREE.MeshBasicMaterial({ color: '#fbf6dc', fog: false }));
@@ -91,6 +97,8 @@ scene.add(terrain, water);
 const placesRoot = buildPlaces();
 scene.add(placesRoot);
 const colliders = collectColliders(placesRoot);
+scene.add(buildBridges(), buildBankRocks());
+let lanternField = null, fieldGlow = null, buildingGlow = null;
 
 const exclusions = L.places.filter((p) => p.w).map((p) => ({ x: p.x, z: p.z, hw: (Math.abs(Math.cos(p.rot || 0)) * p.w + Math.abs(Math.sin(p.rot || 0)) * p.d) / 2 + 1, hd: (Math.abs(Math.sin(p.rot || 0)) * p.w + Math.abs(Math.cos(p.rot || 0)) * p.d) / 2 + 1 }));
 for (const [id, hw, hd] of [['zhengdian', 34, 26], ['zhengmen', 14, 10], ['paifang', 9, 5], ['longcui', 12, 12], ['tubi', 10, 10], ['luxue', 9, 6], ['qinfangting', 5, 15], ['cuizhang', 16, 10], ['aojing', 6, 5], ['qinfangzha', 9, 6]]) {
@@ -106,6 +114,7 @@ function batch(root) {
   const keep = [];
   root.traverse((o) => {
     if (!o.isMesh || !o.visible) return;
+    if (o.userData.lantern) { const v = new THREE.Vector3(); o.getWorldPosition(v); lanternSpots.push([v.x, v.y, v.z]); }
     if (o.userData.keepSeparate) { keep.push(o); return; }
     let g = o.geometry.clone().applyMatrix4(o.matrixWorld);
     if (g.index) g = g.toNonIndexed();
@@ -125,8 +134,13 @@ function batch(root) {
   return out;
 }
 scene.remove(placesRoot);
+const lanternSpots = [];
 const batched = batch(placesRoot);
 scene.add(batched);
+lanternField = buildLanternField();
+fieldGlow = buildGlow(lanternField.points, 3.4);
+buildingGlow = buildGlow(lanternSpots, 4.5);
+scene.add(lanternField.mesh, fieldGlow, buildingGlow);
 
 const propsReady = placeProps(props, scene);
 initDynamics({ scene, camera, terrain, water, flora: floraGroup, heightAt, waterDepthMetric, layout: L, getTimeMode: () => TIMES[timeIdx].name });
@@ -196,6 +210,7 @@ $('b-orbit').onclick = () => { setMode('orbit'); overview(); };
 $('b-walk').onclick = () => setMode('walk');
 $('b-tour').onclick = () => setMode('tour');
 $('b-time').onclick = () => applyTime((timeIdx = (timeIdx + 1) % TIMES.length));
+function setTime(i) { timeIdx = i; applyTime(i); }
 let showLabels = true;
 $('b-labels').onclick = () => { showLabels = !showLabels; $('b-labels').setAttribute('aria-pressed', showLabels); $('labels').hidden = !showLabels; };
 $('b-about').onclick = () => ($('about').hidden = false);
@@ -373,4 +388,4 @@ addEventListener('resize', () => {
 });
 tick();
 propsReady.then(() => { const l = $('loading'); l.style.opacity = 0; setTimeout(() => (l.hidden = true), 700); });
-window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime, orbit, showCard, get flight() { return flight; } };
+window.__dgy = { camera, scene, renderer, setMode, goStop, flyTo, viewFor, PLACE, applyTime: setTime, orbit, showCard, get flight() { return flight; } };

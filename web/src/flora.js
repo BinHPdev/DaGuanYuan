@@ -6,6 +6,59 @@ import { heightAt, waterDepthMetric, polyDist } from './terrain.js';
 import { leafTexture } from './textures.js';
 
 let seed = 12345;
+
+// ---------------------------------------------------------------- wind
+// Shared uniforms (uTime advanced by dynamics.js) and per-material sway parameters.
+export const floraUniforms = { uTime: { value: 0 }, uWind: { value: 1 } };
+// Positions of flowering trees / flower beds, consumed by dynamics.js (petals, butterflies).
+export const floraInfo = { blossoms: [], flowerSpots: [] };
+
+const WIND = {
+  willow: { amp: 0.22, h: 6, freq: 1.25, droop: 0.38 },
+  pine: { amp: 0.07, h: 8, freq: 0.75 },
+  generic: { amp: 0.13, h: 6, freq: 1.0 }, wutong: { amp: 0.13, h: 7, freq: 0.9 }, mulberry: { amp: 0.12, h: 4.5, freq: 1.1 },
+  osmanthus: { amp: 0.08, h: 4, freq: 1.1 },
+  pear: { amp: 0.11, h: 4.5, freq: 1.1 }, haitang: { amp: 0.12, h: 4.5, freq: 1.05 }, peach: { amp: 0.11, h: 4, freq: 1.15 },
+  apricot: { amp: 0.11, h: 4, freq: 1.15 }, plum: { amp: 0.09, h: 3.5, freq: 1.2 },
+  vines: { amp: 0.05, h: 0.8, freq: 2.0 }, crops: { amp: 0.07, h: 0.5, freq: 2.2 },
+  tumi: { amp: 0.03, h: 0.5, freq: 2.0 }, muxiang: { amp: 0.03, h: 0.5, freq: 2.0 },
+  peony: { amp: 0.06, h: 0.8, freq: 1.8 }, shaoyao: { amp: 0.06, h: 0.7, freq: 1.9 }, rose: { amp: 0.06, h: 1.0, freq: 1.8 },
+  bamboo: { amp: 0.55, h: 8, freq: 0.85 }, banana: { amp: 0.16, h: 3.2, freq: 1.5, droop: 0.12 }, reed: { amp: 0.3, h: 2.4, freq: 1.7 },
+  lotus: { amp: 0.0, h: 1, freq: 1, bob: 0.035 }, petals: { amp: 0.0, h: 1, freq: 1, bob: 0.02 },
+};
+
+// Vertex-shader sway: grows with height above the template origin; phase from the instance position.
+export function windify(mat, params) {
+  const u = {
+    uAmp: { value: params.amp }, uH: { value: params.h }, uFreq: { value: params.freq },
+    uDroop: { value: params.droop || 0 }, uBob: { value: params.bob || 0 },
+  };
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, floraUniforms, u);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uTime, uWind, uAmp, uH, uFreq, uDroop, uBob;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        #ifdef USE_INSTANCING
+          vec3 wIp = instanceMatrix[3].xyz;
+        #else
+          vec3 wIp = vec3(0.0);
+        #endif
+        float wPh = dot(wIp.xz, vec2(0.37, 0.21));
+        float wHk = clamp(transformed.y / uH, 0.0, 1.4); wHk *= wHk;
+        float wGust = 0.55 + 0.45 * sin(uTime * 0.31 + wIp.x * 0.015 + wIp.z * 0.01);
+        float wSw = sin(uTime * uFreq + wPh) * 0.7 + sin(uTime * uFreq * 2.3 + wPh * 1.7) * 0.3;
+        transformed.x += wSw * uAmp * wHk * wGust * uWind;
+        transformed.z += cos(uTime * uFreq * 0.83 + wPh) * uAmp * 0.45 * wHk * wGust * uWind;
+        // hanging strands (willow) swing more and with a lag along their length
+        float wHang = smoothstep(uH * 0.85, uH * 0.25, transformed.y) * step(0.001, uDroop);
+        transformed.x += uDroop * wHang * sin(uTime * uFreq * 1.4 + wPh + transformed.y * 0.9) * wGust * uWind;
+        transformed.z += uDroop * 0.6 * wHang * cos(uTime * uFreq * 1.1 + wPh + transformed.y * 0.7) * wGust * uWind;
+        transformed.y += uBob * sin(uTime * 1.1 + wPh * 3.0);`);
+  };
+  mat.customProgramCacheKey = () => 'flora-wind';
+  return mat;
+}
+
 const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
 // Indexed geometry with a smooth per-position colour variation (keeps foliage soft, not faceted).
@@ -155,12 +208,29 @@ export function buildFlora(requests, exclusions) {
     emit(r < 0.45 ? 'generic' : r < 0.6 ? 'pine' : r < 0.72 ? 'peach' : r < 0.82 ? 'willow' : r < 0.9 ? 'wutong' : 'pear', x, z, { scale: 0.7 + rnd() * 0.6 });
   }
 
+  // Record flowering trees and flower beds for petals / butterflies.
+  const BLOSSOM = { peach: '#f3b3c3', apricot: '#f5b6a6', pear: '#f7f4ec', haitang: '#e98a9a', plum: '#d4364c' };
+  const pe = new THREE.Vector3(), ps = new THREE.Vector3(), pq = new THREE.Quaternion();
+  for (const [type, color] of Object.entries(BLOSSOM)) {
+    for (const m of buckets[type] || []) {
+      m.decompose(pe, pq, ps);
+      floraInfo.blossoms.push({ x: pe.x, y: pe.y, z: pe.z, color, s: ps.x, type });
+    }
+  }
+  const FLOWERY = new Set(['peach', 'apricot', 'pear', 'haitang', 'plum', 'tumi', 'muxiang', 'peony', 'shaoyao', 'rose', 'banana', 'bamboo', 'vines']);
+  for (const req of requests) {
+    if (!FLOWERY.has(req.type)) continue;
+    if (req.pts) { const m = req.pts[Math.floor(req.pts.length / 2)]; floraInfo.flowerSpots.push({ x: m[0], z: m[1], r: 14, type: req.type }); }
+    else floraInfo.flowerSpots.push({ x: req.x, z: req.z, r: Math.max(4, Math.min(req.r || 4, 16)), type: req.type });
+  }
+
   // Build instanced meshes ---------------------------------------------------------
-  const vcMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+  const vcBase = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
   for (const [type, mats] of Object.entries(buckets)) {
     if (SPECIES[type]) {
       const geo = SPECIES[type]();
-      const im = new THREE.InstancedMesh(geo, vcMat, mats.length);
+      const mat = WIND[type] ? windify(vcBase.clone(), WIND[type]) : vcBase;
+      const im = new THREE.InstancedMesh(geo, mat, mats.length);
       mats.forEach((m, i) => im.setMatrixAt(i, m));
       im.castShadow = LAND_TREE.has(type); im.receiveShadow = true;
       group.add(im);
@@ -169,16 +239,16 @@ export function buildFlora(requests, exclusions) {
   if (buckets.bamboo) group.add(...bambooMeshes(buckets.bamboo));
   if (buckets.banana) group.add(cardMesh(buckets.banana, 'banana'));
   if (buckets.reed) group.add(cardMesh(buckets.reed, 'reed'));
-  if (buckets.lotus) group.add(discMesh(buckets.lotus, '#4f7f3a', 0.9));
-  if (buckets.petals) group.add(discMesh(buckets.petals, '#f3b6c2', 0.12));
+  if (buckets.lotus) group.add(discMesh(buckets.lotus, '#4f7f3a', 0.9, WIND.lotus));
+  if (buckets.petals) group.add(discMesh(buckets.petals, '#f3b6c2', 0.12, WIND.petals));
   return group;
 }
 
 function bambooMeshes(mats) {
   const culm = new THREE.CylinderGeometry(0.035, 0.05, 8, 5); culm.translate(0, 4, 0);
-  const cm = new THREE.InstancedMesh(culm, new THREE.MeshStandardMaterial({ color: '#8fae55', roughness: 0.6 }), mats.length);
+  const cm = new THREE.InstancedMesh(culm, windify(new THREE.MeshStandardMaterial({ color: '#8fae55', roughness: 0.6 }), WIND.bamboo), mats.length);
   const leafGeo = mergeGeometries([new THREE.PlaneGeometry(1.8, 3.6).translate(0, 6.4, 0), new THREE.PlaneGeometry(1.8, 3.6).rotateY(Math.PI / 2).translate(0, 6.4, 0)]);
-  const lm = new THREE.InstancedMesh(leafGeo, new THREE.MeshStandardMaterial({ map: leafTexture('bamboo'), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.8 }), mats.length);
+  const lm = new THREE.InstancedMesh(leafGeo, windify(new THREE.MeshStandardMaterial({ map: leafTexture('bamboo'), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.8 }), WIND.bamboo), mats.length);
   const lean = new THREE.Matrix4();
   mats.forEach((m, i) => {
     lean.makeRotationZ((rnd() - 0.5) * 0.12);
@@ -203,15 +273,15 @@ function cardMesh(mats, kind) {
   } else {
     geo = mergeGeometries([new THREE.PlaneGeometry(1.6, 2.4).translate(0, 1.2, 0), new THREE.PlaneGeometry(1.6, 2.4).rotateY(Math.PI / 2).translate(0, 1.2, 0)]);
   }
-  const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ map: leafTexture(kind), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.8 }), mats.length);
+  const im = new THREE.InstancedMesh(geo, windify(new THREE.MeshStandardMaterial({ map: leafTexture(kind), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.8 }), WIND[kind]), mats.length);
   mats.forEach((m, i) => im.setMatrixAt(i, m));
   im.castShadow = true;
   return im;
 }
 
-function discMesh(mats, color, r) {
+function discMesh(mats, color, r, wind) {
   const geo = new THREE.CircleGeometry(r, 10, 0.3, Math.PI * 2 - 0.3).rotateX(-Math.PI / 2);
-  const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.6, side: THREE.DoubleSide }), mats.length);
+  const im = new THREE.InstancedMesh(geo, windify(new THREE.MeshStandardMaterial({ color, roughness: 0.6, side: THREE.DoubleSide }), wind), mats.length);
   mats.forEach((m, i) => im.setMatrixAt(i, m));
   im.renderOrder = 2;
   return im;

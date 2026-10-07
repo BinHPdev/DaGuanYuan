@@ -29,7 +29,27 @@ export const MAT = {
   bamboo: std({ color: '#8a9a50' }),
   gold: std({ color: '#c9a04a', metalness: 0.4, roughness: 0.4 }),
   dark: std({ color: '#2a2622' }),
+  eave: std({ map: T.eaveTexture(), roughness: 0.7 }),
+  eaveGreen: std({ map: T.eaveTexture('#3e5a46'), roughness: 0.6 }),
+  soffit: std({ map: T.soffitTexture(), side: THREE.DoubleSide }),
+  door: std({ map: T.doorTexture(), side: THREE.DoubleSide }),
+  doorGreen: std({ map: T.doorTexture('#2f4a35', '#f1ecd9'), side: THREE.DoubleSide }),
+  hangLattice: std({ map: T.hangingLatticeTexture(), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide }),
+  hangLatticeGreen: std({ map: T.hangingLatticeTexture('#2f4a35'), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide }),
+  beamRich: std({ map: T.richBeamTexture() }),
+  dianban: std({ color: '#8e2b20' }),            // 垫板
+  dougong: std({ color: '#2d5a6b', roughness: 0.7 }),
+  dougongTop: std({ color: '#3f7d5c', roughness: 0.7 }),
+  kanqiang: std({ color: '#8b3a2c' }),           // 槛墙 (red plastered sill wall)
+  paving: std({ map: T.pavingTexture(), roughness: 0.95 }),
+  pebble: std({ map: T.pebbleTexture(), roughness: 0.95 }),
+  ridgeDark: std({ color: '#33373b', roughness: 0.6 }),
+  lantern: std({ color: '#c0281e', emissive: '#ff3a1a', emissiveIntensity: 0.0, roughness: 0.5 }),
+  lanternGold: std({ color: '#c9a04a', metalness: 0.5, roughness: 0.4 }),
 };
+MAT.louchuang = [0, 1, 2, 3].map((k) => std({ map: T.louchuangTexture(k) }));
+// Lanterns light up at night / 元宵: main.js changes MAT.lantern.emissiveIntensity.
+export const lanternSpots = []; // filled from mesh.userData.lantern after placement
 
 const box = (w, h, d, m) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
 const cyl = (r, h, m, seg = 10) => new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), m);
@@ -124,10 +144,43 @@ export function roof(w, d, H, type, mat = MAT.tile, opts = {}) {
   const geo = roofGeometry(w, d, H, type, opts);
   const m = new THREE.Mesh(geo, mat);
   grp.add(m);
+  const yAt = geo.userData.yAt;
+  const a = w / 2, b = d / 2;
+  const detail = opts.detail ?? (w > 3 && type !== 'thatch');
+  if (detail) {
+    // rafters seen from below
+    const under = new THREE.Mesh(geo.clone().translate(0, -0.17, 0), MAT.soffit);
+    grp.add(under);
+    // eave fascia with 瓦当/滴水
+    grp.add(new THREE.Mesh(fasciaGeometry(w, d, type, yAt, opts.sides || 4), mat === MAT.tileGreen ? MAT.eaveGreen : MAT.eave));
+  }
   if (type === 'xieshan' || type === 'yingshan' || type === 'wudian') {
     const rl = type === 'wudian' ? Math.max(0.5, w - d) : type === 'xieshan' ? w - 1.1 * (d / 2) : w;
-    grp.add(at(box(rl, 0.45, 0.4, MAT.ridge), 0, H + 0.15, 0));
-    for (const sx of [-1, 1]) grp.add(at(box(0.35, 0.9, 0.5, MAT.ridge), sx * rl / 2, H + 0.4, 0));
+    const rh = Math.min(0.6, 0.25 + d * 0.02);
+    grp.add(at(box(rl, rh, 0.42, MAT.ridge), 0, H + rh / 2 - 0.05, 0));
+    grp.add(at(box(rl, 0.08, 0.5, MAT.ridgeDark), 0, H + rh - 0.02, 0));
+    for (const sx of [-1, 1]) grp.add(wen(rh * 2.1, sx, sx * rl / 2, H - 0.05));
+  }
+  if (detail && (type === 'xieshan' || type === 'wudian')) {
+    const inner = type === 'xieshan' ? a - 0.55 * b : Math.max(0.25, a - b);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      // 戗脊 / 垂脊 following the hip line |z| = b - a + |x| down to the corner
+      const x0 = type === 'xieshan' ? inner : inner, z0 = type === 'xieshan' ? 0.45 * b : 0;
+      grp.add(ridgeTube((t) => { const x = x0 + (a * 0.97 - x0) * t, z = z0 + (b * 0.97 - z0) * t; return [sx * x, yAt(sx * x, sz * z), sz * z]; }, 0.11));
+      if (type === 'xieshan') grp.add(ridgeTube((t) => { const z = 0.45 * b * t; return [sx * inner, yAt(sx * inner * 0.999, sz * z) + 0.0, sz * z]; }, 0.1));
+      // 走兽 on the lower end of the hip
+      for (let k = 0; k < 3; k++) {
+        const t = 0.72 + k * 0.07, x = x0 + (a * 0.97 - x0) * t, z = z0 + (b * 0.97 - z0) * t;
+        grp.add(at(box(0.14, 0.22, 0.14, MAT.ridgeDark), sx * x, yAt(sx * x, sz * z) + 0.2, sz * z));
+      }
+    }
+  }
+  if (detail && type === 'cuanjian') {
+    const sides = opts.sides || 4, sector = (Math.PI * 2) / sides;
+    for (let k = 0; k < sides; k++) {
+      const ang = (k + 0.5) * sector, R = (a / Math.cos(sector / 2)) * 0.97;
+      grp.add(ridgeTube((t) => { const x = Math.cos(ang) * R * t, z = Math.sin(ang) * R * t; return [x, yAt(x, z), z]; }, 0.09));
+    }
   }
   if (type === 'cuanjian') {
     const top = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), MAT.gold);
@@ -153,19 +206,108 @@ export function roof(w, d, H, type, mat = MAT.tile, opts = {}) {
   return grp;
 }
 
+// Vertical ribbon along the eave line, textured with tile ends.
+function fasciaGeometry(w, d, type, yAt, sides) {
+  const a = w / 2, b = d / 2, pts = [];
+  if (type === 'cuanjian') {
+    const sector = (Math.PI * 2) / sides;
+    for (let i = 0; i <= sides * 8; i++) {
+      const ang = (i / (sides * 8)) * Math.PI * 2 + Math.PI / sides;
+      const local = ((ang + Math.PI * 2 + sector / 2) % sector) - sector / 2;
+      const R = a / Math.cos(local);
+      pts.push([Math.cos(ang) * R, Math.sin(ang) * R]);
+    }
+  } else {
+    const n = 24;
+    const edge = (x0, z0, x1, z1) => { for (let i = 0; i < n; i++) pts.push([x0 + (x1 - x0) * (i / n), z0 + (z1 - z0) * (i / n)]); };
+    edge(-a, b, a, b); edge(a, b, a, -b); edge(a, -b, -a, -b); edge(-a, -b, -a, b); pts.push([-a, b]);
+  }
+  const pos = [], uv = [], idx = [];
+  let u = 0;
+  pts.forEach(([x, z], i) => {
+    const y = yAt(x * 0.999, z * 0.999);
+    if (i) u += Math.hypot(x - pts[i - 1][0], z - pts[i - 1][1]);
+    pos.push(x, y + 0.05, z, x, y - 0.28, z);
+    uv.push(u / 2.2, 1, u / 2.2, 0);
+    if (i) { const k = i * 2; idx.push(k - 2, k - 1, k, k - 1, k + 1, k); }
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+
+function ridgeTube(f, r) {
+  const pts = []; for (let i = 0; i <= 10; i++) { const [x, y, z] = f(i / 10); pts.push(new THREE.Vector3(x, y + r * 0.6, z)); }
+  // upturned tip (仙人走兽 end) at the eave
+  const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+  pts.push(last.clone().add(last.clone().sub(prev).setY(0).multiplyScalar(0.6)).add(new THREE.Vector3(0, 0.35, 0)));
+  return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, r, 5), MAT.ridge);
+}
+
+// 正吻: ridge-end dragon, abstracted as a tall block with a curled back.
+function wen(h, sx, x, y) {
+  const g = new THREE.Group();
+  g.add(at(box(0.32, h, 0.5, MAT.ridgeDark), 0, h / 2, 0));
+  const curl = new THREE.Mesh(new THREE.TorusGeometry(h * 0.28, 0.07, 6, 10, Math.PI * 1.3), MAT.ridgeDark);
+  curl.rotation.y = Math.PI / 2; curl.position.set(-sx * 0.25, h * 0.75, 0); g.add(curl);
+  g.position.set(x, y, 0);
+  return g;
+}
+
+// Hanging lanterns: 'red' round lantern or 'palace' hexagonal 宫灯.
+export function lantern(kind = 'red') {
+  const g = new THREE.Group();
+  const string = cyl(0.015, 0.5, MAT.dark, 4); string.position.y = 0.25; g.add(string);
+  if (kind === 'palace') {
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.55, 6), MAT.lantern); g.add(body);
+    for (const y of [0.3, -0.3]) g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.07, 6), MAT.lanternGold), 0, y, 0));
+    const tassel = cyl(0.03, 0.4, MAT.lantern, 4); tassel.position.y = -0.55; g.add(tassel);
+  } else {
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 8), MAT.lantern); body.scale.y = 1.15; g.add(body);
+    for (const y of [0.29, -0.29]) g.add(at(cyl(0.11, 0.06, MAT.lanternGold, 8), 0, y, 0));
+    const tassel = cyl(0.025, 0.3, MAT.lanternGold, 4); tassel.position.y = -0.47; g.add(tassel);
+  }
+  g.children[1].userData.lantern = true;
+  return g;
+}
+
+// 雀替: carved bracket at a column head.
+const queTiGeo = (() => {
+  const s = new THREE.Shape();
+  s.moveTo(0, 0); s.lineTo(0.85, 0); s.quadraticCurveTo(0.5, -0.1, 0.25, -0.32); s.quadraticCurveTo(0.1, -0.4, 0, -0.42); s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: 0.1, bevelEnabled: false, curveSegments: 6 });
+  g.translate(0, 0, -0.05);
+  return g;
+})();
+
+// Thin pavement slab (courtyard paving, pebble path).
+export function pavement(w, d, mat = MAT.paving, repeat = 3) {
+  const geo = new THREE.BoxGeometry(w, 0.08, d);
+  const uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / repeat, uv.getY(i) * d / repeat);
+  const m = new THREE.Mesh(geo, mat); m.position.y = 0.04;
+  return m;
+}
+
 // ---------------------------------------------------------------- halls
 // A timber-frame hall. w = width (along x), d = depth, h = column height.
 export function hall({
   w = 12, d = 7, h = 3.6, bays = 3, roofType = 'xieshan', roofMat = MAT.tile,
-  colMat = MAT.column, beamMat = MAT.beam, latticeMat = MAT.lattice, wallMat = MAT.wall,
+  colMat = MAT.column, beamMat = MAT.beamRich, latticeMat = MAT.lattice, wallMat = MAT.wall,
   platform = 0.6, platMat = MAT.stone, frontOpen = false, backWall = true, sideWalls = true,
-  corridor = 0, roofH, plaque, plaqueOpts, couplet,
+  corridor = 0, roofH, plaque, plaqueOpts, couplet, dougong = false, lanterns = 'red', steps = true,
+  doorMat, hangMat = MAT.hangLattice, sillMat = MAT.kanqiang, rustic = false,
 } = {}) {
   const g = new THREE.Group();
   const W = w + corridor * 2, D = d + corridor * 2;
   g.add(at(box(W + 1.2, platform, D + 1.2, platMat), 0, platform / 2, 0));
   const y0 = platform;
-  // columns: perimeter grid
+  if (steps && platform > 0.35) {
+    const n = Math.max(2, Math.round(platform / 0.18)), bw0 = Math.min(w / bays, 4.5);
+    for (let k = 0; k < n; k++) g.add(at(box(bw0, platform * (n - k) / n, 0.34, platMat), 0, platform * (n - k) / n / 2, D / 2 + 0.6 + 0.17 + k * 0.34));
+  }
   const bw = w / bays;
   const colR = Math.max(0.16, h * 0.05);
   const xs = []; for (let i = 0; i <= bays; i++) xs.push(-w / 2 + i * bw);
@@ -174,32 +316,73 @@ export function hall({
   for (const x of xs) for (const z of zs) {
     if (!corridor && Math.abs(z) < d / 2 - 0.01) continue;
     g.add(at(cyl(colR, h, colMat), x, y0 + h / 2, z));
+    if (!rustic) g.add(at(cyl(colR * 1.55, 0.16, MAT.stone, 10), x, y0 + 0.08, z)); // 柱础
   }
-  // beams (额枋) around top
-  const bh = 0.45;
-  for (const z of [-D / 2, D / 2]) g.add(at(box(W, bh, 0.3, beamMat), 0, y0 + h - bh / 2, z));
-  for (const x of [-W / 2, W / 2]) g.add(at(box(0.3, bh, D, beamMat), x, y0 + h - bh / 2, 0));
-  // walls / lattice
-  const wh = h - bh;
-  if (backWall) g.add(at(box(w, wh, 0.3, wallMat), 0, y0 + wh / 2, -d / 2));
-  if (sideWalls) for (const sx of [-1, 1]) g.add(at(box(0.3, wh, d, wallMat), sx * w / 2, y0 + wh / 2, 0));
-  if (!frontOpen) {
-    for (let i = 0; i < bays; i++) {
-      const cx = -w / 2 + (i + 0.5) * bw;
-      const panel = new THREE.Mesh(new THREE.PlaneGeometry(bw - colR * 2, wh), latticeMat);
-      panel.position.set(cx, y0 + wh / 2, d / 2 - 0.05);
-      g.add(panel);
+  // beams: 大额枋 + 垫板 + 平板枋 (painted); rustic halls keep plain beams
+  const bh = rustic ? 0.4 : 0.42, db = rustic ? 0 : 0.18, pb = rustic ? 0 : 0.12;
+  const top = y0 + h;
+  const beamY = top - db - pb - bh / 2;
+  const bm = rustic ? MAT.beamPlain : beamMat;
+  for (const z of [-D / 2, D / 2]) {
+    g.add(at(box(W, bh, 0.3, bm), 0, beamY, z));
+    if (db) { g.add(at(box(W, db, 0.22, MAT.dianban), 0, top - pb - db / 2, z)); g.add(at(box(W + 0.1, pb, 0.36, MAT.dougong), 0, top - pb / 2, z)); }
+  }
+  for (const x of [-W / 2, W / 2]) {
+    g.add(at(box(0.3, bh, D, bm), x, beamY, 0));
+    if (db) { g.add(at(box(0.22, db, D, MAT.dianban), x, top - pb - db / 2, 0)); g.add(at(box(0.36, pb, D + 0.1, MAT.dougong), x, top - pb / 2, 0)); }
+  }
+  // 斗拱 row along the four sides
+  let dgH = 0;
+  if (dougong) {
+    dgH = 0.5;
+    const ring = [];
+    for (let x = -W / 2; x <= W / 2 + 0.01; x += 0.85) ring.push([x, D / 2], [x, -D / 2]);
+    for (let z = -D / 2 + 0.85; z < D / 2; z += 0.85) ring.push([W / 2, z], [-W / 2, z]);
+    for (const [x, z] of ring) {
+      g.add(at(box(0.26, 0.22, 0.26, MAT.dougong), x, top + 0.11, z));
+      g.add(at(box(0.62, 0.12, 0.62, MAT.dougongTop), x, top + 0.28, z));
+      g.add(at(box(0.3, 0.12, 0.3, MAT.dougong), x, top + 0.42, z));
     }
   }
+  // 雀替 at front column heads
+  if (!rustic) for (const x of xs) for (const sx of [-1, 1]) {
+    if ((sx < 0 && x <= -W / 2 + 0.01) || (sx > 0 && x >= W / 2 - 0.01)) continue;
+    const q = new THREE.Mesh(queTiGeo, MAT.gold);
+    q.position.set(x + sx * colR * 0.8, beamY - bh / 2, D / 2); q.scale.x = sx * Math.min(1, bw / 3.2);
+    g.add(q);
+  }
+  // walls / doors / windows
+  const wh = beamY - bh / 2 - y0;
+  if (backWall) g.add(at(box(w, wh, 0.3, wallMat), 0, y0 + wh / 2, -d / 2));
+  if (sideWalls) for (const sx of [-1, 1]) g.add(at(box(0.3, wh, d, wallMat), sx * w / 2, y0 + wh / 2, 0));
+  const dm = doorMat || (latticeMat === MAT.latticeGreen ? MAT.doorGreen : MAT.door);
+  for (let i = 0; i < bays; i++) {
+    const cx = -w / 2 + (i + 0.5) * bw, pw = bw - colR * 2;
+    if (!frontOpen) {
+      const center = i === Math.floor(bays / 2);
+      if (center || rustic) {
+        g.add(at(new THREE.Mesh(new THREE.PlaneGeometry(pw, wh), center ? dm : latticeMat), cx, y0 + wh / 2, d / 2 - 0.05));
+      } else {
+        // 槛墙 + 槛窗
+        g.add(at(box(pw, 0.85, 0.28, sillMat), cx, y0 + 0.425, d / 2 - 0.1));
+        g.add(at(new THREE.Mesh(new THREE.PlaneGeometry(pw, wh - 0.85), latticeMat), cx, y0 + 0.85 + (wh - 0.85) / 2, d / 2 - 0.05));
+      }
+    }
+    // 倒挂楣子 under the front beam (outer row when there is a corridor)
+    if (!rustic) g.add(at(new THREE.Mesh(new THREE.PlaneGeometry(pw, 0.34), hangMat), cx, beamY - bh / 2 - 0.17, D / 2));
+  }
   // roof
-  const oh = 1.3;
+  const oh = 1.3 + (dougong ? 0.3 : 0);
   const rH = roofH ?? Math.max(2.2, D * 0.42);
-  const r = roof(W + oh * 2, D + oh * 2, rH, roofType, roofMat, { overhang: oh });
-  r.position.y = y0 + h;
+  const r = roof(W + oh * 2, D + oh * 2, rH, roofType, roofMat, { overhang: oh, detail: !rustic && roofType !== 'thatch' });
+  r.position.y = top + dgH;
   g.add(r);
-  if (plaque) addPlaque(g, plaque, { y: y0 + h - bh - 0.55, z: D / 2 + 0.25, width: Math.min(bw * 0.95, 0.75 * [...plaque].length + 0.6), ...plaqueOpts });
-  if (couplet) addCouplet(g, couplet, { y: y0, h, x: bw / 2 * (bays > 1 ? 1 : 0.6), z: D / 2 + colR + 0.04 });
-  g.userData.top = y0 + h + rH;
+  if (lanterns && !rustic) for (const sx of [-1, 1]) {
+    const l = lantern(lanterns); l.position.set(sx * bw * (bays > 1 ? 1 : 0.42), beamY - bh / 2 - 0.7, D / 2 + 0.55); g.add(l);
+  }
+  if (plaque) addPlaque(g, plaque, { y: beamY - bh / 2 - 0.62, z: D / 2 + 0.25, width: Math.min(bw * 0.95, 0.75 * [...plaque].length + 0.6), ...plaqueOpts });
+  if (couplet) addCouplet(g, couplet, { y: y0, h: wh, x: bw / 2 * (bays > 1 ? 1 : 0.6), z: D / 2 + colR + 0.04 });
+  g.userData.top = top + dgH + rH;
   return g;
 }
 
@@ -280,7 +463,7 @@ export function pavilion({ n = 4, r = 2.6, h = 3.2, platform = 0.5, roofMat = MA
 
 // ---------------------------------------------------------------- walls & gates
 // Wall along a polyline in the parent's coordinates. Gaps can be given as [segmentIndex, t0, t1].
-export function wall(points, { h = 3, t = 0.5, mat = MAT.wall, base = MAT.tiger, baseH = 0.8, cap = MAT.tile, gaps = [], capped = true } = {}) {
+export function wall(points, { h = 3, t = 0.5, mat = MAT.wall, base = MAT.tiger, baseH = 0.8, cap = MAT.tile, gaps = [], capped = true, louchuang = 0 } = {}) {
   const g = new THREE.Group();
   for (let i = 0; i < points.length - 1; i++) {
     const [x0, z0] = points[i], [x1, z1] = points[i + 1];
@@ -298,8 +481,19 @@ export function wall(points, { h = 3, t = 0.5, mat = MAT.wall, base = MAT.tiger,
       seg.add(at(box(l, h - baseH, t, mat), 0, baseH + (h - baseH) / 2, 0));
       if (baseH > 0) seg.add(at(box(l + 0.02, baseH, t + 0.06, base), 0, baseH / 2, 0));
       if (capped) {
-        const c = roof(l + 0.3, t + 0.7, 0.35, 'yingshan', cap, { p: 1.2, overhang: 0.0, gableMat: mat });
+        const c = roof(l + 0.3, t + 0.7, 0.35, 'yingshan', cap, { p: 1.2, overhang: 0.0, gableMat: mat, detail: false });
         c.position.y = h; seg.add(c);
+      }
+      if (louchuang && l > 4 && mat === MAT.wall) {
+        const n = Math.floor(l / louchuang);
+        for (let k = 0; k < n; k++) {
+          const x = -l / 2 + (k + 0.5) * (l / n), lm = MAT.louchuang[(i + k) % 4];
+          for (const sd of [-1, 1]) {
+            const pane = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), lm);
+            pane.position.set(x, baseH + (h - baseH) * 0.55, sd * (t / 2 + 0.01)); pane.rotation.y = sd < 0 ? Math.PI : 0;
+            seg.add(pane);
+          }
+        }
       }
       seg.position.set(cx, 0, cz); seg.rotation.y = -ang;
       g.add(seg);
@@ -314,7 +508,7 @@ export function enclosure(w, d, { gateW = 3.2, gateSide = 'front', ...wallOpts }
   const pts = [[-a, b], [-a, -b], [a, -b], [a, b], [-a, b]];
   const gw = gateW / w;
   const gaps = gateSide === 'front' ? [[3, 0.5 - gw / 2, 0.5 + gw / 2]] : [];
-  return wall(pts, { gaps, ...wallOpts });
+  return wall(pts, { gaps, louchuang: 6, ...wallOpts });
 }
 
 // 垂花门 / small gate house.
@@ -358,6 +552,11 @@ export function corridor(points, { w = 2.4, h = 2.8, colMat = MAT.column, roofMa
     for (const s of [-1, 1]) {
       seg.add(at(box(len, 0.3, 0.2, MAT.beam), 0, h + 0.15, s * w / 2));
       seg.add(at(box(len, 0.08, 0.35, MAT.redRail), 0, 0.85, s * w / 2)); // 坐凳栏杆
+      seg.add(at(box(len, 0.25, 0.06, MAT.redRail), 0, 0.6, s * w / 2));
+      for (let k = 0; k < n; k++) {
+        const hl = new THREE.Mesh(new THREE.PlaneGeometry(len / n - 0.24, 0.3), MAT.hangLattice);
+        hl.position.set(-len / 2 + (k + 0.5) * (len / n), h - 0.15, s * w / 2); seg.add(hl);
+      }
     }
     const r = roof(len + 0.6, w + 1.6, 1.1, 'juanpeng', roofMat, { overhang: 0.8, gableMat: MAT.wall });
     r.position.y = h + 0.3;
