@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=__W__, height=__H__" />
+    <title>大观园 · 3D 复原</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "DGY Brush"; src: url("assets/fonts/brush.ttf") format("truetype"); font-display: block; }
+      @font-face { font-family: "DGY Serif"; src: url("assets/fonts/serif.ttf") format("truetype"); font-weight: 200 900; font-display: block; }
+      :root {
+        --ink: #17130e;
+        --paper: #f3ecdc;
+        --vermilion: #b8322a;
+        --gold: #e2b45a;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: __W__px; height: __H__px; overflow: hidden; background: var(--ink); }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--ink);
+        font-family: "DGY Serif", serif; color: var(--paper); }
+
+      /* footage */
+      .vw { position: absolute; inset: 0; overflow: hidden; transform-origin: 50% 45%; }
+      .vw video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+      /* overlay layers */
+      .ov { position: absolute; inset: 0; }
+      .scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 1100px;
+        background: linear-gradient(to bottom, rgba(23,19,14,0) 0%, rgba(23,19,14,0.35) 40%, rgba(23,19,14,0.78) 100%); }
+      .ch, .sc, .w, .qm { display: inline-block; }
+
+      /* place card: vertical brush name, left edge, inside social-safe zone */
+      .name-col { position: absolute; left: 64px; top: 250px; display: flex; flex-direction: column; align-items: center; gap: 26px; }
+      .name { font-family: "DGY Brush"; writing-mode: vertical-rl; font-size: 150px; line-height: 1; letter-spacing: 0.06em;
+        color: var(--paper); text-shadow: 0 4px 24px rgba(0,0,0,0.55), 0 0 2px rgba(0,0,0,0.6); }
+      .seal { width: 92px; height: 92px; background: var(--vermilion); border-radius: 8px; display: grid; grid-template-columns: 1fr;
+        place-items: center; font-family: "DGY Brush"; color: #fbefe0; font-size: 40px; line-height: 0.95; padding: 6px 0;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35); writing-mode: vertical-rl; }
+      .seal span { display: block; }
+      .quote-box { position: absolute; left: 80px; right: 150px; top: 1180px; }
+      .quote { font-size: 60px; font-weight: 600; line-height: 1.42; letter-spacing: 0.02em; text-shadow: 0 2px 14px rgba(0,0,0,0.6); }
+      .qm { color: var(--gold); }
+      .attr { margin-top: 26px; font-size: 34px; font-weight: 400; color: var(--gold); letter-spacing: 0.08em; text-shadow: 0 2px 10px rgba(0,0,0,0.7); }
+      .banner { position: absolute; left: 0; right: 0; top: 230px; display: flex; justify-content: center; }
+      .banner span { display: block; font-size: 44px; font-weight: 700; letter-spacing: 0.35em; padding: 14px 34px 14px 48px;
+        background: rgba(23,19,14,0.55); border-top: 3px solid var(--gold); border-bottom: 3px solid var(--gold); }
+
+      /* hook */
+      .hook-scrim { position: absolute; left: 0; right: 0; top: 0; height: 1000px;
+        background: linear-gradient(to bottom, rgba(23,19,14,0.7) 0%, rgba(23,19,14,0.35) 60%, rgba(23,19,14,0) 100%); }
+      .hook { position: absolute; left: 70px; right: 70px; top: 330px; height: 520px; }
+      .hook-a, .hook-b { position: absolute; left: 0; right: 0; top: 0; text-align: center; font-weight: 900; text-shadow: 0 4px 22px rgba(0,0,0,0.6); }
+      .hook-a { font-size: 92px; line-height: 1.35; }
+      .hook-b { font-size: 96px; line-height: 1.3; }
+      .hook .hl { color: var(--gold); font-family: "DGY Brush"; font-weight: 400; font-size: 1.22em; }
+
+      /* 刘姥姥 speech bubble */
+      .bubble-wrap { position: absolute; left: 80px; right: 150px; top: 1090px; display: flex; flex-direction: column; align-items: flex-start; }
+      .bubble { position: relative; background: var(--paper); color: var(--ink); border-radius: 46px; padding: 34px 50px 40px; border: 5px solid var(--ink);
+        box-shadow: 10px 12px 0 var(--vermilion); transform-origin: 20% 100%; }
+      .bubble::after { content: ""; position: absolute; left: 90px; top: 100%; width: 0; height: 0;
+        border-left: 26px solid transparent; border-right: 26px solid transparent; border-top: 44px solid var(--ink); }
+      .who { font-size: 38px; font-weight: 900; color: var(--vermilion); letter-spacing: 0.1em; }
+      .line { font-family: "DGY Brush"; font-size: 100px; line-height: 1.15; margin-top: 6px; }
+      .attr-b { margin-top: 70px; }
+
+      /* story beats: big horizontal title */
+      .story { position: absolute; left: 80px; right: 150px; top: 1130px; }
+      .story-ch { display: inline-block; font-size: 36px; font-weight: 700; letter-spacing: 0.2em; color: #fbefe0; background: var(--vermilion);
+        padding: 8px 20px 8px 26px; border-radius: 6px; }
+      .story-title { font-family: "DGY Brush"; font-size: 170px; line-height: 1.1; margin-top: 18px; text-shadow: 0 4px 24px rgba(0,0,0,0.6); }
+      .story-sub { font-size: 48px; font-weight: 600; color: var(--gold); letter-spacing: 0.25em; margin-top: 10px; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+
+      /* time-of-day montage */
+      .mont-big { position: absolute; left: 0; right: 0; top: 520px; text-align: center; font-family: "DGY Brush"; font-size: 520px; line-height: 1;
+        color: var(--paper); text-shadow: 0 10px 50px rgba(0,0,0,0.55); }
+      .mont-small { position: absolute; left: 0; right: 0; top: 1130px; text-align: center; font-size: 56px; font-weight: 700; letter-spacing: 0.5em;
+        padding-left: 0.5em; text-shadow: 0 2px 16px rgba(0,0,0,0.75); }
+      .flash { position: absolute; inset: 0; background: #fff8ea; }
+      .lead { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font-size: 66px; font-weight: 900; letter-spacing: 0.12em;
+        text-shadow: 0 3px 20px rgba(0,0,0,0.7); }
+
+      /* outro */
+      .outro-veil { position: absolute; inset: 0; background: radial-gradient(ellipse 90% 60% at 50% 42%, rgba(23,19,14,0.25) 0%, rgba(23,19,14,0.72) 100%); }
+      .outro { position: absolute; left: 70px; right: 70px; top: 470px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+      .outro-title { font-family: "DGY Brush"; font-size: 270px; line-height: 1.05; letter-spacing: 0.04em; text-shadow: 0 8px 40px rgba(0,0,0,0.6); }
+      .outro-sub { font-size: 44px; font-weight: 600; margin-top: 34px; letter-spacing: 0.06em; text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
+      .cta { margin-top: 120px; font-size: 64px; font-weight: 900; color: #fbefe0; background: var(--vermilion); padding: 26px 56px; border-radius: 999px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+      .seal-big { position: absolute; right: 150px; top: 430px; width: 120px; height: 120px; font-size: 52px; }
+
+      /* finishing: vignette + grain + fade */
+      #vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 85% 75% at 50% 50%, rgba(0,0,0,0) 60%, rgba(10,8,5,0.42) 100%); }
+      #grain { position: absolute; inset: 0; pointer-events: none; opacity: 0.11; mix-blend-mode: overlay; background-image: url("assets/grain.png"); background-size: 256px 256px; }
+      #fade { position: absolute; inset: 0; background: var(--ink); pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="__TOTAL__" data-width="__W__" data-height="__H__">
+__VIDEOS__
+      <div id="vignette"></div>
+__OVERLAYS__
+      <div id="grain"></div>
+      <div id="fade"></div>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      __JS__
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
