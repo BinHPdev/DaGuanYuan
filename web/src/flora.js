@@ -317,6 +317,7 @@ export function buildFlora(requests, exclusions) {
       if (t === 'lotus') { if (waterDepthMetric(x, z) > 2) emit(t, x, z, { y: 0.04, scale: 0.6 + rnd() * 0.7 }); continue; }
       if (t === 'petals') { if (waterDepthMetric(x, z) > 0.5) emit(t, x, z, { y: 0.03, scale: 0.6 + rnd() * 0.6 }); continue; }
       if (!onLand(x, z) && !req.onTop) continue;
+      if (req.clear && blocked(x, z, 0)) continue;
       if (t === 'bamboo') { emit(t, x, z, { scale: 0.8 + rnd() * 0.5 }); continue; }
       emit(t, x, z, { scale: LAND_TREE.has(t) ? 0.75 + rnd() * 0.5 : 0.8 + rnd() * 0.5, onTop: req.onTop || 0 });
     }

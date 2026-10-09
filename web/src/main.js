@@ -137,7 +137,7 @@ scene.add(buildBridges(), buildBankRocks());
 let lanternField = null, fieldGlow = null, buildingGlow = null;
 
 const exclusions = L.places.filter((p) => p.w).map((p) => ({ x: p.x, z: p.z, hw: (Math.abs(Math.cos(p.rot || 0)) * p.w + Math.abs(Math.sin(p.rot || 0)) * p.d) / 2 + 1, hd: (Math.abs(Math.sin(p.rot || 0)) * p.w + Math.abs(Math.cos(p.rot || 0)) * p.d) / 2 + 1 }));
-for (const [id, hw, hd] of [['zhengdian', 34, 26], ['zhengmen', 14, 10], ['paifang', 9, 5], ['longcui', 12, 12], ['tubi', 10, 10], ['luxue', 9, 6], ['qinfangting', 5, 15], ['cuizhang', 16, 10], ['aojing', 6, 5], ['qinfangzha', 9, 6], ['gongdu', 6, 6], ['huazhong', 5, 5], ['dicui', 6, 20]]) {
+for (const [id, hw, hd] of [['zhengdian', 34, 26], ['zhengmen', 14, 10], ['paifang', 9, 5], ['longcui', 12, 12], ['tubi', 10, 10], ['luxue', 9, 6], ['qinfangting', 5, 15], ['cuizhang', 16, 10], ['aojing', 6, 5], ['qinfangzha', 9, 6], ['gongdu', 6, 6], ['huazhong', 5, 5], ['dicui', 6, 20], ['liaoting', 9, 11]]) {
   const p = L.places.find((q) => q.id === id); exclusions.push({ x: p.x, z: p.z, hw, hd });
 }
 const floraGroup = buildFlora(flora, exclusions);
