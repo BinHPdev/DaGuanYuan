@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 EDL = [
     dict(kind="hook", dur=3.6, clip="s01_dive", src=0.0,
          a=["曹雪芹用", "一支笔", "|盖了一座园子"], b=["两百多年后|", "我用", "代码", "把它盖了出来"]),
-    dict(kind="place", dur=3.0, clip="s02_gate", src=0.6, name="大观园正门", banner="随贾政一行 · 游园",
+    dict(kind="place", dur=3.65, clip="s02_gate", src=0.3, name="大观园正门", banner="随贾政一行 · 游园",
          quote="只见正门五间，上面筒瓦泥鳅脊", ch="第十七回"),
     dict(kind="place", dur=2.8, clip="s04_qinfang", src=0.8, name="沁芳亭",
          quote="石桥三港，兽面衔吐。桥上有亭。", ch="第十七回"),
@@ -49,11 +49,39 @@ EDL = [
 OUTRO = dict(title="大观园", sub="依《红楼梦》原著复原 · 可漫游的 3D 园林", cta="你最想住进哪一处？", seal="大观")
 
 # ---------------------------------------------------------------- build
+# ---------------------------------------------------------------- snap cuts to the music
+# onsets.json: phrase onsets of the theme (timeline seconds), measured from the music in-point
+MUSIC = json.load(open(os.path.join(HERE, "assets/audio/onsets.json")))
+ONS = MUSIC["onsets"]
+
+
+def snap(x, tol=0.5):
+    near = min(ONS, key=lambda o: abs(o - x))
+    return near if abs(near - x) <= tol else x
+
+
 t = 0.0
 for s in EDL:
     s["t"] = round(t, 3)
-    t += s["dur"]
+    end = round(snap(t + s["dur"]), 3)
+    if s["kind"] == "montage":  # inner beats ride the music too
+        n = len(s["beats"]); cuts = [t] + [round(snap(t + k * s["dur"] / n, 0.35), 3) for k in range(1, n)]
+        s["cuts"] = [round(c - t, 3) for c in cuts] + [round(end - t, 3)]
+    s["dur"] = round(end - t, 3)
+    t = end
 TOTAL = round(t, 3)
+
+# every edit must fit inside its captured take
+LEN = {}
+for f in os.listdir(os.path.join(HERE, "assets/footage")):
+    if f.endswith(".mp4"):
+        LEN[f[:-4]] = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                            os.path.join(HERE, "assets/footage", f)], capture_output=True, text=True).stdout)
+for s in EDL:
+    if s.get("clip") and s["src"] + s["dur"] > LEN[s["clip"]] - 0.05:
+        s["src"] = round(max(0.0, LEN[s["clip"]] - 0.05 - s["dur"]), 3)  # slide the in-point earlier
+    if s.get("clip") and s["src"] + s["dur"] > LEN[s["clip"]] + 1e-3:
+        raise SystemExit(f'{s["clip"]}: in {s["src"]} + {s["dur"]}s exceeds take ({LEN[s["clip"]]}s)')
 
 vid, ovl, js = [], [], []
 E = html.escape
@@ -81,10 +109,10 @@ for i, s in enumerate(EDL):
     sid, st, d = f"s{i:02d}", s["t"], s["dur"]
     o = []  # scene-local js
     if s["kind"] == "montage":
-        n = len(s["beats"]); seg = round(d / n, 3)
+        n = len(s["beats"]); cuts = s["cuts"]
         inner = []
         for k, (clip, big, small) in enumerate(s["beats"]):
-            bst = round(k * seg, 3)
+            bst = cuts[k]; seg = round(cuts[k + 1] - cuts[k], 3)
             # continuous camera: every time-of-day take was shot on the same path, so the
             # in-point follows the edit position and the motion never jumps
             video(f"{sid}{k}", clip, round(st + bst, 3), seg, round(s["src"] + bst, 3))
@@ -97,7 +125,7 @@ for i, s in enumerate(EDL):
             if k:
                 o.append(f'tl.set("#{sid}-b{k}", {{ opacity: 1 }}, {bst});')
             if k < n - 1:
-                o.append(f'tl.set("#{sid}-b{k}", {{ opacity: 0 }}, {round(bst + seg, 3)});')
+                o.append(f'tl.set("#{sid}-b{k}", {{ opacity: 0 }}, {cuts[k + 1]});')
             o.append(f'tl.fromTo("#{sid}-b{k}-flash", {{ opacity: {0 if k == 0 else 0.55} }}, {{ opacity: 0, duration: 0.35, ease: "power2.out" }}, {bst});')
             o.append(f'tl.fromTo("#{sid}-b{k}-big", {{ scale: 1.35, opacity: 0, filter: "blur(18px)" }}, {{ scale: 1, opacity: 0.92, filter: "blur(0px)", duration: 0.38, ease: "expo.out" }}, {bst + 0.02});')
             o.append(f'tl.fromTo("#{sid}-b{k}-big", {{ y: 0 }}, {{ y: -24, duration: {seg}, ease: "none", immediateRender: false }}, {bst});')
@@ -215,6 +243,9 @@ for cid, st, d, inner, sjs in SCENES:
 </html>
 ''')
     ovl.append(f'      <div id="{cid}" data-composition-id="{cid}" data-composition-src="compositions/{cid}.html" data-start="{st}" data-duration="{d}" data-track-index="1" data-width="{W}" data-height="{H}"></div>')
+
+vid.append(f'''      <audio id="music" src="assets/audio/hlm_theme.m4a" data-start="0" data-duration="{TOTAL}" data-track-index="5" data-volume="0.9"
+        data-automation='{{"version":1,"lanes":[{{"target":"volume","points":[{{"t":0,"v":0}},{{"t":0.6,"v":1}},{{"t":{round(TOTAL - 2.8, 2)},"v":1}},{{"t":{TOTAL},"v":0}}]}}]}}'></audio>''')
 
 # whole-film fade from/to black
 js.append(f'tl.fromTo("#fade", {{ opacity: 1 }}, {{ opacity: 0, duration: 0.25, ease: "power1.out" }}, 0);')

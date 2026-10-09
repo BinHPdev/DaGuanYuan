@@ -3,3 +3,6 @@ renders/
 _fontsrc/
 snapshots/
 snapshots2/
+assets/audio/*.m4a
+.hyperframes/
+.thumbnails/
