@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"></head>
+  <body>
+    <template id="s10">
+      <style>
+        #s10-root { position: absolute; inset: 0; }
+      </style>
+      <div data-hf-id="hf-j0dg" id="s10-root" data-composition-id="s10" data-width="1080" data-height="1920">
+        <div data-hf-id="hf-261e" class="scrim"></div>
+        <div data-hf-id="hf-pphr" class="story">
+          <div data-hf-id="hf-stif" class="story-ch" id="s10-ch">第二十七回</div>
+          <div data-hf-id="hf-1iel" class="story-title" id="s10-title"><span data-hf-id="hf-fgri" class="sc">宝</span><span data-hf-id="hf-1xpc" class="sc">钗</span><span data-hf-id="hf-lcia" class="sc">扑</span><span data-hf-id="hf-65hv" class="sc">蝶</span></div>
+          
+        </div>
+      </div>
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s10-ch", { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.05);
+        tl.fromTo("#s10-title .sc", { opacity: 0, y: 70, rotation: 8 }, { opacity: 1, y: 0, rotation: 0, duration: 0.3, ease: "expo.out", stagger: 0.07 }, 0.1);
+        window.__timelines["s10"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

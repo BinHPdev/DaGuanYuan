@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"></head>
+  <body>
+    <template id="s12">
+      <style>
+        #s12-root { position: absolute; inset: 0; }
+      </style>
+      <div data-hf-id="hf-4o74" id="s12-root" data-composition-id="s12" data-width="1080" data-height="1920">
+        <div data-hf-id="hf-261e" class="scrim"></div>
+        
+        <div data-hf-id="hf-ggsg" class="name-col">
+          <div data-hf-id="hf-ynja" class="name" id="s12-name">秋爽斋</div>
+          <div data-hf-id="hf-vgwx" class="seal" id="s12-seal"><span data-hf-id="hf-8xgy">大</span><span data-hf-id="hf-i89l">观</span></div>
+        </div>
+        <div data-hf-id="hf-cjo4" class="quote-box">
+          <div data-hf-id="hf-zlj2" class="quote" id="s12-q"><span data-hf-id="hf-9z6x" class="qm">「</span><span data-hf-id="hf-122d" class="ch">当</span><span data-hf-id="hf-ecrg" class="ch">地</span><span data-hf-id="hf-i93i" class="ch">放</span><span data-hf-id="hf-s5os" class="ch">着</span><span data-hf-id="hf-dj0s" class="ch">一</span><span data-hf-id="hf-2ei4" class="ch">张</span><span data-hf-id="hf-6m27" class="ch">花</span><span data-hf-id="hf-v284" class="ch">梨</span><span data-hf-id="hf-g2ft" class="ch">大</span><span data-hf-id="hf-1obq" class="ch">理</span><span data-hf-id="hf-mr9x" class="ch">石</span><span data-hf-id="hf-s2zx" class="ch">大</span><span data-hf-id="hf-4c9z" class="tail"><span data-hf-id="hf-icf8" class="ch">案</span><span data-hf-id="hf-adhy" class="qm">」</span></span></div>
+          <div data-hf-id="hf-mp5a" class="attr" id="s12-attr">——《红楼梦》第四十回</div>
+        </div>
+      </div>
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s12-name", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power3.out" }, 0.08);
+        tl.fromTo("#s12-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 0.45);
+        tl.fromTo("#s12-q .ch, #s12-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.0385 }, 0.3);
+        tl.fromTo("#s12-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 0.75);
+        window.__timelines["s12"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

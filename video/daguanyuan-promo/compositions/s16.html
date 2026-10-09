@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"></head>
+  <body>
+    <template id="s16">
+      <style>
+        #s16-root { position: absolute; inset: 0; }
+      </style>
+      <div data-hf-id="hf-tovc" id="s16-root" data-composition-id="s16" data-width="1080" data-height="1920">
+        <div data-hf-id="hf-nzqn" class="outro-veil" id="s16-veil"></div>
+        <div data-hf-id="hf-e0lx" class="outro">
+          <div data-hf-id="hf-wk1h" class="outro-title" id="s16-title"><span data-hf-id="hf-d54g" class="sc">大</span><span data-hf-id="hf-y567" class="sc">观</span><span data-hf-id="hf-30vi" class="sc">园</span></div>
+          <div data-hf-id="hf-oovj" class="outro-sub" id="s16-sub">依《红楼梦》原著复原 · 可漫游的 3D 园林</div>
+          <div data-hf-id="hf-g8il" class="cta" id="s16-cta">你最想住进哪一处？</div>
+        </div>
+        <div data-hf-id="hf-j339" class="seal seal-big" id="s16-seal"><span data-hf-id="hf-8xgy">大</span><span data-hf-id="hf-i89l">观</span></div>
+      </div>
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s16-veil", { opacity: 0 }, { opacity: 1, duration: 1.4, ease: "power1.inOut" }, 0.6);
+        tl.fromTo("#s16-title .sc", { opacity: 0, y: 90, filter: "blur(14px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "expo.out", stagger: 0.16 }, 1.0);
+        tl.fromTo("#s16-seal", { scale: 1.8, opacity: 0, rotation: -14 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.35, ease: "back.out(2.4)" }, 1.75);
+        tl.fromTo("#s16-sub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 2.0);
+        tl.fromTo("#s16-cta", { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.8)" }, 3.3);
+        tl.fromTo("#s16-cta", { y: 0 }, { y: -8, duration: 0.6, yoyo: true, repeat: 3, ease: "sine.inOut", immediateRender: false }, 3.9);
+        window.__timelines["s16"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

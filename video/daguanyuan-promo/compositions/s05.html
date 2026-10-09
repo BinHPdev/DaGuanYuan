@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"></head>
+  <body>
+    <template id="s05">
+      <style>
+        #s05-root { position: absolute; inset: 0; }
+      </style>
+      <div data-hf-id="hf-w4i8" id="s05-root" data-composition-id="s05" data-width="1080" data-height="1920">
+        <div data-hf-id="hf-261e" class="scrim"></div>
+        
+        <div data-hf-id="hf-ggsg" class="name-col">
+          <div data-hf-id="hf-tm1y" class="name" id="s05-name">蓼汀花溆</div>
+          <div data-hf-id="hf-dpb1" class="seal" id="s05-seal"><span data-hf-id="hf-8xgy">大</span><span data-hf-id="hf-i89l">观</span></div>
+        </div>
+        <div data-hf-id="hf-cjo4" class="quote-box">
+          <div data-hf-id="hf-kr86" class="quote" id="s05-q"><span data-hf-id="hf-9z6x" class="qm">「</span><span data-hf-id="hf-2euz" class="ch">忽</span><span data-hf-id="hf-p8od" class="ch">闻</span><span data-hf-id="hf-1pe8" class="ch">水</span><span data-hf-id="hf-fgf0" class="ch">声</span><span data-hf-id="hf-jd3u" class="ch">潺</span><span data-hf-id="hf-kbya" class="ch">湲</span><span data-hf-id="hf-jqag" class="ch">，</span><span data-hf-id="hf-43l9" class="ch">泻</span><span data-hf-id="hf-w04a" class="ch">出</span><span data-hf-id="hf-mr9x" class="ch">石</span><span data-hf-id="hf-4c9z" class="tail"><span data-hf-id="hf-cnqm" class="ch">洞</span><span data-hf-id="hf-adhy" class="qm">」</span></span></div>
+          <div data-hf-id="hf-usdy" class="attr" id="s05-attr">——《红楼梦》第十七回</div>
+        </div>
+      </div>
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s05-name", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power3.out" }, 0.08);
+        tl.fromTo("#s05-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 0.45);
+        tl.fromTo("#s05-q .ch, #s05-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.045 }, 0.3);
+        tl.fromTo("#s05-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 0.75);
+        window.__timelines["s05"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

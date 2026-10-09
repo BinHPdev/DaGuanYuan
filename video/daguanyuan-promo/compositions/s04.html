@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"></head>
+  <body>
+    <template id="s04">
+      <style>
+        #s04-root { position: absolute; inset: 0; }
+      </style>
+      <div data-hf-id="hf-bmcg" id="s04-root" data-composition-id="s04" data-width="1080" data-height="1920">
+        <div data-hf-id="hf-261e" class="scrim"></div>
+        
+        <div data-hf-id="hf-ggsg" class="name-col">
+          <div data-hf-id="hf-nsox" class="name" id="s04-name">怡红院</div>
+          <div data-hf-id="hf-q73e" class="seal" id="s04-seal"><span data-hf-id="hf-8xgy">大</span><span data-hf-id="hf-i89l">观</span></div>
+        </div>
+        <div data-hf-id="hf-cjo4" class="quote-box">
+          <div data-hf-id="hf-9z37" class="quote" id="s04-q"><span data-hf-id="hf-9z6x" class="qm">「</span><span data-hf-id="hf-dj0s" class="ch">一</span><span data-hf-id="hf-ehmv" class="ch">边</span><span data-hf-id="hf-zzu3" class="ch">种</span><span data-hf-id="hf-s5os" class="ch">着</span><span data-hf-id="hf-a2jg" class="ch">数</span><span data-hf-id="hf-kzeg" class="ch">本</span><span data-hf-id="hf-bdqj" class="ch">芭</span><span data-hf-id="hf-uv3r" class="ch">蕉</span><span data-hf-id="hf-jqag" class="ch">，</span><span data-hf-id="hf-fz8l" class="ch">那</span><span data-hf-id="hf-uu1w" class="ch">一</span><span data-hf-id="hf-5mg7" class="ch">边</span><span data-hf-id="hf-5tol" class="ch">乃</span><span data-hf-id="hf-hkvl" class="ch">是</span><span data-hf-id="hf-tn4t" class="ch">一</span><span data-hf-id="hf-iiar" class="ch">棵</span><span data-hf-id="hf-z2ap" class="ch">西</span><span data-hf-id="hf-nvrc" class="ch">府</span><span data-hf-id="hf-s5op" class="ch">海</span><span data-hf-id="hf-4c9z" class="tail"><span data-hf-id="hf-noa4" class="ch">棠</span><span data-hf-id="hf-adhy" class="qm">」</span></span></div>
+          <div data-hf-id="hf-jhsj" class="attr" id="s04-attr">——《红楼梦》第十七回</div>
+        </div>
+      </div>
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s04-name", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power3.out" }, 0.08);
+        tl.fromTo("#s04-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 0.45);
+        tl.fromTo("#s04-q .ch, #s04-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.025 }, 0.3);
+        tl.fromTo("#s04-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 0.75);
+        window.__timelines["s04"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

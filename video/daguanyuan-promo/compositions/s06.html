@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"></head>
+  <body>
+    <template id="s06">
+      <style>
+        #s06-root { position: absolute; inset: 0; }
+      </style>
+      <div data-hf-id="hf-kk7c" id="s06-root" data-composition-id="s06" data-width="1080" data-height="1920">
+        <div data-hf-id="hf-261e" class="scrim"></div>
+        
+        <div data-hf-id="hf-ggsg" class="name-col">
+          <div data-hf-id="hf-1l6v" class="name" id="s06-name">省亲别墅</div>
+          <div data-hf-id="hf-eefw" class="seal" id="s06-seal"><span data-hf-id="hf-8xgy">大</span><span data-hf-id="hf-i89l">观</span></div>
+        </div>
+        <div data-hf-id="hf-cjo4" class="quote-box">
+          <div data-hf-id="hf-ozq5" class="quote" id="s06-q"><span data-hf-id="hf-9z6x" class="qm">「</span><span data-hf-id="hf-jxtl" class="ch">崇</span><span data-hf-id="hf-xau7" class="ch">阁</span><span data-hf-id="hf-pwrv" class="ch">巍</span><span data-hf-id="hf-9sg4" class="ch">峨</span><span data-hf-id="hf-jqag" class="ch">，</span><span data-hf-id="hf-a0vm" class="ch">层</span><span data-hf-id="hf-z0ko" class="ch">楼</span><span data-hf-id="hf-n1uc" class="ch">高</span><span data-hf-id="hf-4c9z" class="tail"><span data-hf-id="hf-tebt" class="ch">起</span><span data-hf-id="hf-adhy" class="qm">」</span></span></div>
+          <div data-hf-id="hf-rppx" class="attr" id="s06-attr">——《红楼梦》第十七回</div>
+        </div>
+      </div>
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s06-name", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power3.out" }, 0.08);
+        tl.fromTo("#s06-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 0.45);
+        tl.fromTo("#s06-q .ch, #s06-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.045 }, 0.3);
+        tl.fromTo("#s06-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 0.75);
+        window.__timelines["s06"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"></head>
+  <body>
+    <template id="s11">
+      <style>
+        #s11-root { position: absolute; inset: 0; }
+      </style>
+      <div data-hf-id="hf-7j5s" id="s11-root" data-composition-id="s11" data-width="1080" data-height="1920">
+        <div data-hf-id="hf-261e" class="scrim"></div>
+        <div data-hf-id="hf-pphr" class="story">
+          <div data-hf-id="hf-elh6" class="story-ch" id="s11-ch">第二十七回</div>
+          <div data-hf-id="hf-uc1g" class="story-title" id="s11-title"><span data-hf-id="hf-lmdg" class="sc">黛</span><span data-hf-id="hf-nyu2" class="sc">玉</span><span data-hf-id="hf-tz5t" class="sc">葬</span><span data-hf-id="hf-hb76" class="sc">花</span></div>
+          <div data-hf-id="hf-s0qk" class="story-sub" id="s11-sub"><span data-hf-id="hf-6m27" class="ch">花</span><span data-hf-id="hf-6x3m" class="ch">谢</span><span data-hf-id="hf-ruj3" class="ch">花</span><span data-hf-id="hf-s9ny" class="ch">飞</span><span data-hf-id="hf-rg82" class="ch">花</span><span data-hf-id="hf-a0cf" class="ch">满</span><span data-hf-id="hf-c3dj" class="ch">天</span></div>
+        </div>
+      </div>
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s11-ch", { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 0.05);
+        tl.fromTo("#s11-title .sc", { opacity: 0, y: 70, rotation: 8 }, { opacity: 1, y: 0, rotation: 0, duration: 0.3, ease: "expo.out", stagger: 0.07 }, 0.1);
+        tl.fromTo("#s11-sub .ch", { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: 0.06 }, 0.6);
+        window.__timelines["s11"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

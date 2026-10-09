@@ -1,8 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=__W__, height=__H__" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=__W__, height=__H__">
     <title>大观园 · 3D 复原</title>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <style>
@@ -24,21 +24,23 @@
       .vw video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
       /* overlay layers */
-      .ov { position: absolute; inset: 0; }
+      .mont { position: absolute; inset: 0; }
       .scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 1100px;
         background: linear-gradient(to bottom, rgba(23,19,14,0) 0%, rgba(23,19,14,0.35) 40%, rgba(23,19,14,0.78) 100%); }
-      .ch, .sc, .w, .qm { display: inline-block; }
+      .ch, .sc, .w, .qm, .tail { display: inline-block; }
+      .tail { white-space: nowrap; }
+      .brk { display: block; height: 0; }
 
       /* place card: vertical brush name, left edge, inside social-safe zone */
       .name-col { position: absolute; left: 64px; top: 250px; display: flex; flex-direction: column; align-items: center; gap: 26px; }
       .name { font-family: "DGY Brush"; writing-mode: vertical-rl; font-size: 150px; line-height: 1; letter-spacing: 0.06em;
         color: var(--paper); text-shadow: 0 4px 24px rgba(0,0,0,0.55), 0 0 2px rgba(0,0,0,0.6); }
-      .seal { width: 92px; height: 92px; background: var(--vermilion); border-radius: 8px; display: grid; grid-template-columns: 1fr;
-        place-items: center; font-family: "DGY Brush"; color: #fbefe0; font-size: 40px; line-height: 0.95; padding: 6px 0;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.35); writing-mode: vertical-rl; }
+      .seal { width: 92px; height: 92px; background: var(--vermilion); border-radius: 8px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; font-family: "DGY Brush"; color: #fbefe0; font-size: 38px; line-height: 1.0;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
       .seal span { display: block; }
-      .quote-box { position: absolute; left: 80px; right: 150px; top: 1180px; }
-      .quote { font-size: 60px; font-weight: 600; line-height: 1.42; letter-spacing: 0.02em; text-shadow: 0 2px 14px rgba(0,0,0,0.6); }
+      .quote-box { position: absolute; left: 80px; right: 120px; top: 1180px; }
+      .quote { text-wrap: balance; font-size: 58px; font-weight: 600; line-height: 1.42; letter-spacing: 0.02em; text-shadow: 0 2px 14px rgba(0,0,0,0.6); }
       .qm { color: var(--gold); }
       .attr { margin-top: 26px; font-size: 34px; font-weight: 400; color: var(--gold); letter-spacing: 0.08em; text-shadow: 0 2px 10px rgba(0,0,0,0.7); }
       .banner { position: absolute; left: 0; right: 0; top: 230px; display: flex; justify-content: center; }
@@ -76,6 +78,7 @@
         color: var(--paper); text-shadow: 0 10px 50px rgba(0,0,0,0.55); }
       .mont-small { position: absolute; left: 0; right: 0; top: 1130px; text-align: center; font-size: 56px; font-weight: 700; letter-spacing: 0.5em;
         padding-left: 0.5em; text-shadow: 0 2px 16px rgba(0,0,0,0.75); }
+      .mont-big.ink { color: var(--ink); text-shadow: 0 0 30px rgba(255,255,255,0.7), 0 0 4px rgba(255,255,255,0.9); }
       .flash { position: absolute; inset: 0; background: #fff8ea; }
       .lead { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font-size: 66px; font-weight: 900; letter-spacing: 0.12em;
         text-shadow: 0 3px 20px rgba(0,0,0,0.7); }
@@ -87,7 +90,7 @@
       .outro-sub { font-size: 44px; font-weight: 600; margin-top: 34px; letter-spacing: 0.06em; text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
       .cta { margin-top: 120px; font-size: 64px; font-weight: 900; color: #fbefe0; background: var(--vermilion); padding: 26px 56px; border-radius: 999px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
-      .seal-big { position: absolute; right: 150px; top: 430px; width: 120px; height: 120px; font-size: 52px; }
+      .seal-big { position: absolute; right: 150px; top: 300px; width: 120px; height: 120px; font-size: 50px; }
 
       /* finishing: vignette + grain + fade */
       #vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 85% 75% at 50% 50%, rgba(0,0,0,0) 60%, rgba(10,8,5,0.42) 100%); }
@@ -96,12 +99,12 @@
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="__TOTAL__" data-width="__W__" data-height="__H__">
+    <div data-hf-id="hf-f7tb" id="root" data-composition-id="main" data-start="0" data-duration="__TOTAL__" data-width="__W__" data-height="__H__">
 __VIDEOS__
-      <div id="vignette"></div>
+      <div data-hf-id="hf-h7i3" id="vignette"></div>
 __OVERLAYS__
-      <div id="grain"></div>
-      <div id="fade"></div>
+      <div data-hf-id="hf-f6d6" id="grain"></div>
+      <div data-hf-id="hf-128z" id="fade"></div>
     </div>
     <script>
       const tl = gsap.timeline({ paused: true });

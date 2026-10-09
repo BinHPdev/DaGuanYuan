@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"></head>
+  <body>
+    <template id="s01">
+      <style>
+        #s01-root { position: absolute; inset: 0; }
+      </style>
+      <div data-hf-id="hf-hv00" id="s01-root" data-composition-id="s01" data-width="1080" data-height="1920">
+        <div data-hf-id="hf-261e" class="scrim"></div>
+        <div data-hf-id="hf-xgix" class="banner" id="s01-banner"><span data-hf-id="hf-offb">随贾政一行 · 游园</span></div>
+        <div data-hf-id="hf-ggsg" class="name-col">
+          <div data-hf-id="hf-qzu8" class="name" id="s01-name">大观园正门</div>
+          <div data-hf-id="hf-dgnl" class="seal" id="s01-seal"><span data-hf-id="hf-8xgy">大</span><span data-hf-id="hf-i89l">观</span></div>
+        </div>
+        <div data-hf-id="hf-cjo4" class="quote-box">
+          <div data-hf-id="hf-lg36" class="quote" id="s01-q"><span data-hf-id="hf-9z6x" class="qm">「</span><span data-hf-id="hf-xxt6" class="ch">只</span><span data-hf-id="hf-3g0v" class="ch">见</span><span data-hf-id="hf-1ckl" class="ch">正</span><span data-hf-id="hf-wshw" class="ch">门</span><span data-hf-id="hf-roj4" class="ch">五</span><span data-hf-id="hf-v79s" class="ch">间</span><span data-hf-id="hf-jqag" class="ch">，</span><span data-hf-id="hf-9jyi" class="ch">上</span><span data-hf-id="hf-fvwy" class="ch">面</span><span data-hf-id="hf-bjfm" class="ch">筒</span><span data-hf-id="hf-xbba" class="ch">瓦</span><span data-hf-id="hf-g0s3" class="ch">泥</span><span data-hf-id="hf-tcwj" class="ch">鳅</span><span data-hf-id="hf-4c9z" class="tail"><span data-hf-id="hf-9tmy" class="ch">脊</span><span data-hf-id="hf-adhy" class="qm">」</span></span></div>
+          <div data-hf-id="hf-a2t6" class="attr" id="s01-attr">——《红楼梦》第十七回</div>
+        </div>
+      </div>
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        tl.fromTo("#s01-name", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power3.out" }, 0.08);
+        tl.fromTo("#s01-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 0.45);
+        tl.fromTo("#s01-q .ch, #s01-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.0357 }, 0.3);
+        tl.fromTo("#s01-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 0.75);
+        tl.fromTo("#s01-banner span", { opacity: 0, scale: 1.2 }, { opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" }, 0.1);
+        window.__timelines["s01"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

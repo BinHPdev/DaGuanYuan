@@ -1,8 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1080, height=1920" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
     <title>大观园 · 3D 复原</title>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <style>
@@ -24,21 +24,23 @@
       .vw video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
       /* overlay layers */
-      .ov { position: absolute; inset: 0; }
+      .mont { position: absolute; inset: 0; }
       .scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 1100px;
         background: linear-gradient(to bottom, rgba(23,19,14,0) 0%, rgba(23,19,14,0.35) 40%, rgba(23,19,14,0.78) 100%); }
-      .ch, .sc, .w, .qm { display: inline-block; }
+      .ch, .sc, .w, .qm, .tail { display: inline-block; }
+      .tail { white-space: nowrap; }
+      .brk { display: block; height: 0; }
 
       /* place card: vertical brush name, left edge, inside social-safe zone */
       .name-col { position: absolute; left: 64px; top: 250px; display: flex; flex-direction: column; align-items: center; gap: 26px; }
       .name { font-family: "DGY Brush"; writing-mode: vertical-rl; font-size: 150px; line-height: 1; letter-spacing: 0.06em;
         color: var(--paper); text-shadow: 0 4px 24px rgba(0,0,0,0.55), 0 0 2px rgba(0,0,0,0.6); }
-      .seal { width: 92px; height: 92px; background: var(--vermilion); border-radius: 8px; display: grid; grid-template-columns: 1fr;
-        place-items: center; font-family: "DGY Brush"; color: #fbefe0; font-size: 40px; line-height: 0.95; padding: 6px 0;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.35); writing-mode: vertical-rl; }
+      .seal { width: 92px; height: 92px; background: var(--vermilion); border-radius: 8px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; font-family: "DGY Brush"; color: #fbefe0; font-size: 38px; line-height: 1.0;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
       .seal span { display: block; }
-      .quote-box { position: absolute; left: 80px; right: 150px; top: 1180px; }
-      .quote { font-size: 60px; font-weight: 600; line-height: 1.42; letter-spacing: 0.02em; text-shadow: 0 2px 14px rgba(0,0,0,0.6); }
+      .quote-box { position: absolute; left: 80px; right: 120px; top: 1180px; }
+      .quote { text-wrap: balance; font-size: 58px; font-weight: 600; line-height: 1.42; letter-spacing: 0.02em; text-shadow: 0 2px 14px rgba(0,0,0,0.6); }
       .qm { color: var(--gold); }
       .attr { margin-top: 26px; font-size: 34px; font-weight: 400; color: var(--gold); letter-spacing: 0.08em; text-shadow: 0 2px 10px rgba(0,0,0,0.7); }
       .banner { position: absolute; left: 0; right: 0; top: 230px; display: flex; justify-content: center; }
@@ -76,6 +78,7 @@
         color: var(--paper); text-shadow: 0 10px 50px rgba(0,0,0,0.55); }
       .mont-small { position: absolute; left: 0; right: 0; top: 1130px; text-align: center; font-size: 56px; font-weight: 700; letter-spacing: 0.5em;
         padding-left: 0.5em; text-shadow: 0 2px 16px rgba(0,0,0,0.75); }
+      .mont-big.ink { color: var(--ink); text-shadow: 0 0 30px rgba(255,255,255,0.7), 0 0 4px rgba(255,255,255,0.9); }
       .flash { position: absolute; inset: 0; background: #fff8ea; }
       .lead { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font-size: 66px; font-weight: 900; letter-spacing: 0.12em;
         text-shadow: 0 3px 20px rgba(0,0,0,0.7); }
@@ -87,7 +90,7 @@
       .outro-sub { font-size: 44px; font-weight: 600; margin-top: 34px; letter-spacing: 0.06em; text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
       .cta { margin-top: 120px; font-size: 64px; font-weight: 900; color: #fbefe0; background: var(--vermilion); padding: 26px 56px; border-radius: 999px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
-      .seal-big { position: absolute; right: 150px; top: 430px; width: 120px; height: 120px; font-size: 52px; }
+      .seal-big { position: absolute; right: 150px; top: 300px; width: 120px; height: 120px; font-size: 50px; }
 
       /* finishing: vignette + grain + fade */
       #vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 85% 75% at 50% 50%, rgba(0,0,0,0) 60%, rgba(10,8,5,0.42) 100%); }
@@ -96,358 +99,72 @@
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="57.2" data-width="1080" data-height="1920">
-      <div class="vw" id="vw-s00"><video id="v-s00" class="clip" src="assets/footage/s01_dive.mp4" muted playsinline
-        data-start="0.0" data-duration="3.6" data-media-start="0.0" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s01"><video id="v-s01" class="clip" src="assets/footage/s02_gate.mp4" muted playsinline
-        data-start="3.6" data-duration="3.0" data-media-start="0.6" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s02"><video id="v-s02" class="clip" src="assets/footage/s04_qinfang.mp4" muted playsinline
-        data-start="6.6" data-duration="2.8" data-media-start="0.8" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s03"><video id="v-s03" class="clip" src="assets/footage/s05_xiaoxiang.mp4" muted playsinline
-        data-start="9.4" data-duration="2.8" data-media-start="0.6" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s04"><video id="v-s04" class="clip" src="assets/footage/s06_yihong.mp4" muted playsinline
-        data-start="12.2" data-duration="2.8" data-media-start="0.6" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s05"><video id="v-s05" class="clip" src="assets/footage/s07_liaoting.mp4" muted playsinline
-        data-start="15.0" data-duration="2.6" data-media-start="0.8" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s06"><video id="v-s06" class="clip" src="assets/footage/s08_palace.mp4" muted playsinline
-        data-start="17.6" data-duration="3.6" data-media-start="0.9" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s07"><video id="v-s07" class="clip" src="assets/footage/s09_ouxiang.mp4" muted playsinline
-        data-start="21.2" data-duration="2.6" data-media-start="0.8" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s08"><video id="v-s08" class="clip" src="assets/footage/s18_jiamu.mp4" muted playsinline
-        data-start="23.8" data-duration="3.4" data-media-start="0.4" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s09"><video id="v-s09" class="clip" src="assets/footage/s10_gongdu.mp4" muted playsinline
-        data-start="27.2" data-duration="2.0" data-media-start="1.2" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s10"><video id="v-s10" class="clip" src="assets/footage/s19_baochai.mp4" muted playsinline
-        data-start="29.2" data-duration="2.0" data-media-start="1.2" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s11"><video id="v-s11" class="clip" src="assets/footage/s17_huazhong.mp4" muted playsinline
-        data-start="31.2" data-duration="2.2" data-media-start="1.0" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s12"><video id="v-s12" class="clip" src="assets/footage/s12_interior.mp4" muted playsinline
-        data-start="33.4" data-duration="2.4" data-media-start="1.0" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s130"><video id="v-s130" class="clip" src="assets/footage/t0_day.mp4" muted playsinline
-        data-start="35.8" data-duration="1.8" data-media-start="0.4" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s131"><video id="v-s131" class="clip" src="assets/footage/t1_dusk.mp4" muted playsinline
-        data-start="37.6" data-duration="1.8" data-media-start="2.2" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s132"><video id="v-s132" class="clip" src="assets/footage/t2_lantern.mp4" muted playsinline
-        data-start="39.4" data-duration="1.8" data-media-start="4.0" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s133"><video id="v-s133" class="clip" src="assets/footage/t3_snow.mp4" muted playsinline
-        data-start="41.2" data-duration="1.8" data-media-start="5.8" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s134"><video id="v-s134" class="clip" src="assets/footage/t4_moon.mp4" muted playsinline
-        data-start="43.0" data-duration="1.8" data-media-start="7.6" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s14"><video id="v-s14" class="clip" src="assets/footage/s13_lantern_close.mp4" muted playsinline
-        data-start="44.8" data-duration="2.6" data-media-start="0.8" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s15"><video id="v-s15" class="clip" src="assets/footage/s14_snowplum.mp4" muted playsinline
-        data-start="47.4" data-duration="2.8" data-media-start="0.6" data-track-index="0"></video></div>
-      <div class="vw" id="vw-s16"><video id="v-s16" class="clip" src="assets/footage/s16_outro.mp4" muted playsinline
-        data-start="50.2" data-duration="7.0" data-media-start="0.0" data-track-index="0"></video></div>
-      <div id="vignette"></div>
-      <div class="clip ov" id="s00" data-start="0.0" data-duration="3.6" data-track-index="1">
-        <div class="hook-scrim"></div>
-        <div class="hook">
-          <div class="hook-a" id="s00-a"><span class="w">曹雪芹用</span><span class="w hl">一支笔</span><span class="w">，盖了一座园子</span></div>
-          <div class="hook-b" id="s00-b"><span class="w">两百多年后</span><span class="w">我用</span><span class="w hl">代码</span><span class="w">把它盖了出来</span></div>
-        </div>
-      </div>
-      <div class="clip ov" id="s01" data-start="3.6" data-duration="3.0" data-track-index="1">
-        <div class="scrim"></div>
-        <div class="banner" id="s01-banner"><span>随贾政一行 · 游园</span></div>
-        <div class="name-col">
-          <div class="name" id="s01-name">大观园正门</div>
-          <div class="seal" id="s01-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s01-q"><span class="qm">「</span><span class="ch">只</span><span class="ch">见</span><span class="ch">正</span><span class="ch">门</span><span class="ch">五</span><span class="ch">间</span><span class="ch">，</span><span class="ch">上</span><span class="ch">面</span><span class="ch">筒</span><span class="ch">瓦</span><span class="ch">泥</span><span class="ch">鳅</span><span class="ch">脊</span><span class="qm">」</span></div>
-          <div class="attr" id="s01-attr">——《红楼梦》第十七回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s02" data-start="6.6" data-duration="2.8" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s02-name">沁芳亭</div>
-          <div class="seal" id="s02-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s02-q"><span class="qm">「</span><span class="ch">石</span><span class="ch">桥</span><span class="ch">三</span><span class="ch">港</span><span class="ch">，</span><span class="ch">兽</span><span class="ch">面</span><span class="ch">衔</span><span class="ch">吐</span><span class="ch">。</span><span class="ch">桥</span><span class="ch">上</span><span class="ch">有</span><span class="ch">亭</span><span class="ch">。</span><span class="qm">」</span></div>
-          <div class="attr" id="s02-attr">——《红楼梦》第十七回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s03" data-start="9.4" data-duration="2.8" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s03-name">潇湘馆</div>
-          <div class="seal" id="s03-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s03-q"><span class="qm">「</span><span class="ch">有</span><span class="ch">千</span><span class="ch">百</span><span class="ch">竿</span><span class="ch">翠</span><span class="ch">竹</span><span class="ch">遮</span><span class="ch">映</span><span class="qm">」</span></div>
-          <div class="attr" id="s03-attr">——《红楼梦》第十七回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s04" data-start="12.2" data-duration="2.8" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s04-name">怡红院</div>
-          <div class="seal" id="s04-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s04-q"><span class="qm">「</span><span class="ch">一</span><span class="ch">边</span><span class="ch">种</span><span class="ch">着</span><span class="ch">数</span><span class="ch">本</span><span class="ch">芭</span><span class="ch">蕉</span><span class="ch">，</span><span class="ch">那</span><span class="ch">一</span><span class="ch">边</span><span class="ch">乃</span><span class="ch">是</span><span class="ch">一</span><span class="ch">棵</span><span class="ch">西</span><span class="ch">府</span><span class="ch">海</span><span class="ch">棠</span><span class="qm">」</span></div>
-          <div class="attr" id="s04-attr">——《红楼梦》第十七回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s05" data-start="15.0" data-duration="2.6" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s05-name">蓼汀花溆</div>
-          <div class="seal" id="s05-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s05-q"><span class="qm">「</span><span class="ch">忽</span><span class="ch">闻</span><span class="ch">水</span><span class="ch">声</span><span class="ch">潺</span><span class="ch">湲</span><span class="ch">，</span><span class="ch">泻</span><span class="ch">出</span><span class="ch">石</span><span class="ch">洞</span><span class="qm">」</span></div>
-          <div class="attr" id="s05-attr">——《红楼梦》第十七回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s06" data-start="17.6" data-duration="3.6" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s06-name">省亲别墅</div>
-          <div class="seal" id="s06-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s06-q"><span class="qm">「</span><span class="ch">崇</span><span class="ch">阁</span><span class="ch">巍</span><span class="ch">峨</span><span class="ch">，</span><span class="ch">层</span><span class="ch">楼</span><span class="ch">高</span><span class="ch">起</span><span class="qm">」</span></div>
-          <div class="attr" id="s06-attr">——《红楼梦》第十七回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s07" data-start="21.2" data-duration="2.6" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s07-name">藕香榭</div>
-          <div class="seal" id="s07-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s07-q"><span class="qm">「</span><span class="ch">盖</span><span class="ch">在</span><span class="ch">池</span><span class="ch">中</span><span class="ch">，</span><span class="ch">四</span><span class="ch">面</span><span class="ch">有</span><span class="ch">窗</span><span class="qm">」</span></div>
-          <div class="attr" id="s07-attr">——《红楼梦》第三十八回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s08" data-start="23.8" data-duration="3.4" data-track-index="1">
-        <div class="scrim"></div>
-        <div class="bubble-wrap">
-          <div class="bubble" id="s08-bub">
-            <div class="who">刘姥姥</div>
-            <div class="line" id="s08-line"><span class="ch">竟</span><span class="ch">比</span><span class="ch">那</span><span class="ch">画</span><span class="ch">儿</span><span class="ch">还</span><span class="ch">强</span><span class="ch">十</span><span class="ch">倍</span><span class="ch">！</span></div>
-          </div>
-          <div class="attr attr-b" id="s08-attr">——《红楼梦》第四十回 · 刘姥姥进大观园</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s09" data-start="27.2" data-duration="2.0" data-track-index="1">
-        <div class="scrim"></div>
-        <div class="story">
-          <div class="story-ch" id="s09-ch">第二十三回</div>
-          <div class="story-title" id="s09-title"><span class="sc">宝</span><span class="sc">黛</span><span class="sc">共</span><span class="sc">读</span></div>
-          
-        </div>
-      </div>
-      <div class="clip ov" id="s10" data-start="29.2" data-duration="2.0" data-track-index="1">
-        <div class="scrim"></div>
-        <div class="story">
-          <div class="story-ch" id="s10-ch">第二十七回</div>
-          <div class="story-title" id="s10-title"><span class="sc">宝</span><span class="sc">钗</span><span class="sc">扑</span><span class="sc">蝶</span></div>
-          
-        </div>
-      </div>
-      <div class="clip ov" id="s11" data-start="31.2" data-duration="2.2" data-track-index="1">
-        <div class="scrim"></div>
-        <div class="story">
-          <div class="story-ch" id="s11-ch">第二十七回</div>
-          <div class="story-title" id="s11-title"><span class="sc">黛</span><span class="sc">玉</span><span class="sc">葬</span><span class="sc">花</span></div>
-          <div class="story-sub" id="s11-sub"><span class="ch">花</span><span class="ch">谢</span><span class="ch">花</span><span class="ch">飞</span><span class="ch">花</span><span class="ch">满</span><span class="ch">天</span></div>
-        </div>
-      </div>
-      <div class="clip ov" id="s12" data-start="33.4" data-duration="2.4" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s12-name">秋爽斋</div>
-          <div class="seal" id="s12-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s12-q"><span class="qm">「</span><span class="ch">当</span><span class="ch">地</span><span class="ch">放</span><span class="ch">着</span><span class="ch">一</span><span class="ch">张</span><span class="ch">花</span><span class="ch">梨</span><span class="ch">大</span><span class="ch">理</span><span class="ch">石</span><span class="ch">大</span><span class="ch">案</span><span class="qm">」</span></div>
-          <div class="attr" id="s12-attr">——《红楼梦》第四十回</div>
-        </div>
-      </div>
-      <div class="clip ov mont" id="s130" data-start="35.8" data-duration="1.8" data-track-index="1">
-        <div class="mont-big" id="s130-big">昼</div>
-        <div class="mont-small" id="s130-small">白昼</div>
-        <div class="flash" id="s130-flash"></div>
-      </div>
-      <div class="clip ov mont" id="s131" data-start="37.6" data-duration="1.8" data-track-index="1">
-        <div class="mont-big" id="s131-big">暮</div>
-        <div class="mont-small" id="s131-small">黄昏</div>
-        <div class="flash" id="s131-flash"></div>
-      </div>
-      <div class="clip ov mont" id="s132" data-start="39.4" data-duration="1.8" data-track-index="1">
-        <div class="mont-big" id="s132-big">灯</div>
-        <div class="mont-small" id="s132-small">元宵</div>
-        <div class="flash" id="s132-flash"></div>
-      </div>
-      <div class="clip ov mont" id="s133" data-start="41.2" data-duration="1.8" data-track-index="1">
-        <div class="mont-big" id="s133-big">雪</div>
-        <div class="mont-small" id="s133-small">初雪</div>
-        <div class="flash" id="s133-flash"></div>
-      </div>
-      <div class="clip ov mont" id="s134" data-start="43.0" data-duration="1.8" data-track-index="1">
-        <div class="mont-big" id="s134-big">月</div>
-        <div class="mont-small" id="s134-small">月夜</div>
-        <div class="flash" id="s134-flash"></div>
-      </div>
-      <div class="clip ov" id="s13-lead" data-start="35.8" data-duration="1.6" data-track-index="2">
-        <div class="lead" id="s13-leadtxt"><span class="ch">一</span><span class="ch">座</span><span class="ch">园</span><span class="ch">子</span><span class="ch"> </span><span class="ch">·</span><span class="ch"> </span><span class="ch">五</span><span class="ch">种</span><span class="ch">光</span><span class="ch">阴</span></div>
-      </div>
-      <div class="clip ov" id="s14" data-start="44.8" data-duration="2.6" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s14-name">元宵</div>
-          <div class="seal" id="s14-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s14-q"><span class="qm">「</span><span class="ch">处</span><span class="ch">处</span><span class="ch">灯</span><span class="ch">光</span><span class="ch">相</span><span class="ch">映</span><span class="ch">，</span><span class="ch">时</span><span class="ch">时</span><span class="ch">细</span><span class="ch">乐</span><span class="ch">声</span><span class="ch">喧</span><span class="qm">」</span></div>
-          <div class="attr" id="s14-attr">——《红楼梦》第十八回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s15" data-start="47.4" data-duration="2.8" data-track-index="1">
-        <div class="scrim"></div>
-        
-        <div class="name-col">
-          <div class="name" id="s15-name">栊翠庵</div>
-          <div class="seal" id="s15-seal"><span>大</span><span>观</span></div>
-        </div>
-        <div class="quote-box">
-          <div class="quote" id="s15-q"><span class="qm">「</span><span class="ch">红</span><span class="ch">梅</span><span class="ch">如</span><span class="ch">胭</span><span class="ch">脂</span><span class="ch">一</span><span class="ch">般</span><span class="ch">，</span><span class="ch">映</span><span class="ch">着</span><span class="ch">雪</span><span class="ch">色</span><span class="qm">」</span></div>
-          <div class="attr" id="s15-attr">——《红楼梦》第四十九回</div>
-        </div>
-      </div>
-      <div class="clip ov" id="s16" data-start="50.2" data-duration="7.0" data-track-index="1">
-        <div class="outro-veil" id="s16-veil"></div>
-        <div class="outro">
-          <div class="outro-title" id="s16-title"><span class="sc">大</span><span class="sc">观</span><span class="sc">园</span></div>
-          <div class="outro-sub" id="s16-sub">依《红楼梦》原著复原 · 可漫游的 3D 园林</div>
-          <div class="cta" id="s16-cta">你最想住进哪一处？</div>
-        </div>
-        <div class="seal seal-big" id="s16-seal"><span>大</span><span>观</span></div>
-      </div>
-      <div id="grain"></div>
-      <div id="fade"></div>
+    <div data-hf-id="hf-6jpw" id="root" data-composition-id="main" data-start="0" data-duration="57.2" data-width="1080" data-height="1920">
+      <div data-hf-id="hf-1k0m" class="vw" id="vw-s00"><video data-hf-id="hf-rjms" id="v-s00" class="clip" src="assets/footage/s01_dive.mp4" muted playsinline data-start="0.0" data-duration="3.6" data-media-start="0.0" data-track-index="0"></video></div>
+      <div data-hf-id="hf-5i4n" class="vw" id="vw-s01"><video data-hf-id="hf-x2x6" id="v-s01" class="clip" src="assets/footage/s02_gate.mp4" muted playsinline data-start="3.6" data-duration="3.0" data-media-start="0.6" data-track-index="0"></video></div>
+      <div data-hf-id="hf-wu8s" class="vw" id="vw-s02"><video data-hf-id="hf-5swc" id="v-s02" class="clip" src="assets/footage/s04_qinfang.mp4" muted playsinline data-start="6.6" data-duration="2.8" data-media-start="0.8" data-track-index="0"></video></div>
+      <div data-hf-id="hf-xlwl" class="vw" id="vw-s03"><video data-hf-id="hf-5hsp" id="v-s03" class="clip" src="assets/footage/s05_xiaoxiang.mp4" muted playsinline data-start="9.4" data-duration="2.8" data-media-start="0.6" data-track-index="0"></video></div>
+      <div data-hf-id="hf-e60i" class="vw" id="vw-s04"><video data-hf-id="hf-6asb" id="v-s04" class="clip" src="assets/footage/s06_yihong.mp4" muted playsinline data-start="12.2" data-duration="2.8" data-media-start="0.6" data-track-index="0"></video></div>
+      <div data-hf-id="hf-kbqb" class="vw" id="vw-s05"><video data-hf-id="hf-3wgl" id="v-s05" class="clip" src="assets/footage/s07_liaoting.mp4" muted playsinline data-start="15.0" data-duration="2.6" data-media-start="0.8" data-track-index="0"></video></div>
+      <div data-hf-id="hf-9g8o" class="vw" id="vw-s06"><video data-hf-id="hf-tqy8" id="v-s06" class="clip" src="assets/footage/s08_palace.mp4" muted playsinline data-start="17.6" data-duration="3.6" data-media-start="0.9" data-track-index="0"></video></div>
+      <div data-hf-id="hf-a7wh" class="vw" id="vw-s07"><video data-hf-id="hf-x8e0" id="v-s07" class="clip" src="assets/footage/s09_ouxiang.mp4" muted playsinline data-start="21.2" data-duration="2.6" data-media-start="0.8" data-track-index="0"></video></div>
+      <div data-hf-id="hf-a4f2" class="vw" id="vw-s08"><video data-hf-id="hf-gh2t" id="v-s08" class="clip" src="assets/footage/s18_jiamu.mp4" muted playsinline data-start="23.8" data-duration="3.4" data-media-start="0.4" data-track-index="0"></video></div>
+      <div data-hf-id="hf-e2j3" class="vw" id="vw-s09"><video data-hf-id="hf-2ypi" id="v-s09" class="clip" src="assets/footage/s10_gongdu.mp4" muted playsinline data-start="27.2" data-duration="2.0" data-media-start="1.2" data-track-index="0"></video></div>
+      <div data-hf-id="hf-ld3l" class="vw" id="vw-s10"><video data-hf-id="hf-1lo6" id="v-s10" class="clip" src="assets/footage/s19_baochai.mp4" muted playsinline data-start="29.2" data-duration="2.0" data-media-start="1.2" data-track-index="0"></video></div>
+      <div data-hf-id="hf-klfs" class="vw" id="vw-s11"><video data-hf-id="hf-79hl" id="v-s11" class="clip" src="assets/footage/s17_huazhong.mp4" muted playsinline data-start="31.2" data-duration="2.2" data-media-start="1.0" data-track-index="0"></video></div>
+      <div data-hf-id="hf-t9bn" class="vw" id="vw-s12"><video data-hf-id="hf-yk89" id="v-s12" class="clip" src="assets/footage/s12_interior.mp4" muted playsinline data-start="33.4" data-duration="2.4" data-media-start="1.0" data-track-index="0"></video></div>
+      <div data-hf-id="hf-xrau" class="vw" id="vw-s130"><video data-hf-id="hf-6mtk" id="v-s130" class="clip" src="assets/footage/t0_day.mp4" muted playsinline data-start="35.8" data-duration="1.8" data-media-start="0.4" data-track-index="0"></video></div>
+      <div data-hf-id="hf-1pev" class="vw" id="vw-s131"><video data-hf-id="hf-bmlz" id="v-s131" class="clip" src="assets/footage/t1_dusk.mp4" muted playsinline data-start="37.6" data-duration="1.8" data-media-start="2.2" data-track-index="0"></video></div>
+      <div data-hf-id="hf-qtx8" class="vw" id="vw-s132"><video data-hf-id="hf-ngaa" id="v-s132" class="clip" src="assets/footage/t2_lantern.mp4" muted playsinline data-start="39.4" data-duration="1.8" data-media-start="4.0" data-track-index="0"></video></div>
+      <div data-hf-id="hf-rll1" class="vw" id="vw-s133"><video data-hf-id="hf-xvqb" id="v-s133" class="clip" src="assets/footage/t3_snow.mp4" muted playsinline data-start="41.2" data-duration="1.8" data-media-start="5.8" data-track-index="0"></video></div>
+      <div data-hf-id="hf-adaq" class="vw" id="vw-s134"><video data-hf-id="hf-pgn9" id="v-s134" class="clip" src="assets/footage/t4_moon.mp4" muted playsinline data-start="43.0" data-duration="1.8" data-media-start="7.6" data-track-index="0"></video></div>
+      <div data-hf-id="hf-6jhx" class="vw" id="vw-s14"><video data-hf-id="hf-dzjo" id="v-s14" class="clip" src="assets/footage/s13_lantern_close.mp4" muted playsinline data-start="44.8" data-duration="2.6" data-media-start="0.8" data-track-index="0"></video></div>
+      <div data-hf-id="hf-5ru4" class="vw" id="vw-s15"><video data-hf-id="hf-3cfp" id="v-s15" class="clip" src="assets/footage/s14_snowplum.mp4" muted playsinline data-start="47.4" data-duration="2.8" data-media-start="0.6" data-track-index="0"></video></div>
+      <div data-hf-id="hf-gnbr" class="vw" id="vw-s16"><video data-hf-id="hf-0rwj" id="v-s16" class="clip" src="assets/footage/s16_outro.mp4" muted playsinline data-start="50.2" data-duration="7.0" data-media-start="0.0" data-track-index="0"></video></div>
+      <div data-hf-id="hf-h7i3" id="vignette"></div>
+      <div data-hf-id="hf-385s" id="s00" data-composition-id="s00" data-composition-src="compositions/s00.html" data-start="0.0" data-duration="3.6" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-2rzi" id="s01" data-composition-id="s01" data-composition-src="compositions/s01.html" data-start="3.6" data-duration="3.0" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-9v9x" id="s02" data-composition-id="s02" data-composition-src="compositions/s02.html" data-start="6.6" data-duration="2.8" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-1y2d" id="s03" data-composition-id="s03" data-composition-src="compositions/s03.html" data-start="9.4" data-duration="2.8" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-tgg8" id="s04" data-composition-id="s04" data-composition-src="compositions/s04.html" data-start="12.2" data-duration="2.8" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-zviu" id="s05" data-composition-id="s05" data-composition-src="compositions/s05.html" data-start="15.0" data-duration="2.6" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-f9a2" id="s06" data-composition-id="s06" data-composition-src="compositions/s06.html" data-start="17.6" data-duration="3.6" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-9woj" id="s07" data-composition-id="s07" data-composition-src="compositions/s07.html" data-start="21.2" data-duration="2.6" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-2opt" id="s08" data-composition-id="s08" data-composition-src="compositions/s08.html" data-start="23.8" data-duration="3.4" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-k2vl" id="s09" data-composition-id="s09" data-composition-src="compositions/s09.html" data-start="27.2" data-duration="2.0" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-x6mp" id="s10" data-composition-id="s10" data-composition-src="compositions/s10.html" data-start="29.2" data-duration="2.0" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-9v69" id="s11" data-composition-id="s11" data-composition-src="compositions/s11.html" data-start="31.2" data-duration="2.2" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-1qgo" id="s12" data-composition-id="s12" data-composition-src="compositions/s12.html" data-start="33.4" data-duration="2.4" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-fbzi" id="s13" data-composition-id="s13" data-composition-src="compositions/s13.html" data-start="35.8" data-duration="9.0" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-ahqa" id="s14" data-composition-id="s14" data-composition-src="compositions/s14.html" data-start="44.8" data-duration="2.6" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-f33m" id="s15" data-composition-id="s15" data-composition-src="compositions/s15.html" data-start="47.4" data-duration="2.8" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-3e1o" id="s16" data-composition-id="s16" data-composition-src="compositions/s16.html" data-start="50.2" data-duration="7.0" data-track-index="1" data-width="1080" data-height="1920"></div>
+      <div data-hf-id="hf-f6d6" id="grain"></div>
+      <div data-hf-id="hf-128z" id="fade"></div>
     </div>
     <script>
       const tl = gsap.timeline({ paused: true });
       tl.fromTo("#vw-s00", { scale: 1.0 }, { scale: 1.045, duration: 3.6, ease: "none" }, 0.0);
-      tl.fromTo("#s00-a .w", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.28, ease: "power4.out", stagger: 0.12 }, 0.1);
-      tl.to("#s00-a", { opacity: 0, y: -40, duration: 0.25, ease: "power2.in" }, 1.65);
-      tl.fromTo("#s00-b .w", { opacity: 0, y: 70, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "expo.out", stagger: 0.14 }, 1.85);
-      tl.fromTo("#s00-b .hl", { color: "#f3ecdc" }, { color: "#e2b45a", duration: 0.3 }, 2.45);
       tl.fromTo("#vw-s01", { scale: 1.0 }, { scale: 1.045, duration: 3.0, ease: "none" }, 3.6);
-      tl.fromTo("#s01-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 3.68);
-      tl.fromTo("#s01-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 4.05);
-      tl.fromTo("#s01-q .ch, #s01-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.03571428571428571 }, 3.9);
-      tl.fromTo("#s01-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 4.35);
-      tl.fromTo("#s01-banner span", { opacity: 0, letterSpacing: "0.8em" }, { opacity: 1, letterSpacing: "0.35em", duration: 0.6, ease: "power3.out" }, 3.7);
       tl.fromTo("#vw-s02", { scale: 1.0 }, { scale: 1.045, duration: 2.8, ease: "none" }, 6.6);
-      tl.fromTo("#s02-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 6.68);
-      tl.fromTo("#s02-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 7.05);
-      tl.fromTo("#s02-q .ch, #s02-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.03333333333333333 }, 6.8999999999999995);
-      tl.fromTo("#s02-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 7.35);
       tl.fromTo("#vw-s03", { scale: 1.0 }, { scale: 1.045, duration: 2.8, ease: "none" }, 9.4);
-      tl.fromTo("#s03-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 9.48);
-      tl.fromTo("#s03-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 9.85);
-      tl.fromTo("#s03-q .ch, #s03-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.045 }, 9.700000000000001);
-      tl.fromTo("#s03-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 10.15);
       tl.fromTo("#vw-s04", { scale: 1.0 }, { scale: 1.045, duration: 2.8, ease: "none" }, 12.2);
-      tl.fromTo("#s04-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 12.28);
-      tl.fromTo("#s04-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 12.649999999999999);
-      tl.fromTo("#s04-q .ch, #s04-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.025 }, 12.5);
-      tl.fromTo("#s04-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 12.95);
       tl.fromTo("#vw-s05", { scale: 1.0 }, { scale: 1.045, duration: 2.6, ease: "none" }, 15.0);
-      tl.fromTo("#s05-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 15.08);
-      tl.fromTo("#s05-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 15.45);
-      tl.fromTo("#s05-q .ch, #s05-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.045 }, 15.3);
-      tl.fromTo("#s05-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 15.75);
       tl.fromTo("#vw-s06", { scale: 1.0 }, { scale: 1.045, duration: 3.6, ease: "none" }, 17.6);
-      tl.fromTo("#s06-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 17.68);
-      tl.fromTo("#s06-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 18.05);
-      tl.fromTo("#s06-q .ch, #s06-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.045 }, 17.900000000000002);
-      tl.fromTo("#s06-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 18.35);
       tl.fromTo("#vw-s07", { scale: 1.0 }, { scale: 1.045, duration: 2.6, ease: "none" }, 21.2);
-      tl.fromTo("#s07-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 21.279999999999998);
-      tl.fromTo("#s07-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 21.65);
-      tl.fromTo("#s07-q .ch, #s07-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.045 }, 21.5);
-      tl.fromTo("#s07-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 21.95);
       tl.fromTo("#vw-s08", { scale: 1.0 }, { scale: 1.045, duration: 3.4, ease: "none" }, 23.8);
-      tl.fromTo("#s08-bub", { scale: 0.4, opacity: 0, rotation: -6 }, { scale: 1, opacity: 1, rotation: -2, duration: 0.42, ease: "back.out(2)" }, 23.95);
-      tl.fromTo("#s08-line .ch", { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: 0.2, ease: "power4.out", stagger: 0.06 }, 24.2);
-      tl.fromTo("#s08-bub", { y: 0 }, { y: -10, duration: 0.18, yoyo: true, repeat: 3, ease: "sine.inOut" }, 25.0);
-      tl.fromTo("#s08-attr", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 24.8);
       tl.fromTo("#vw-s09", { scale: 1.0 }, { scale: 1.045, duration: 2.0, ease: "none" }, 27.2);
-      tl.fromTo("#s09-ch", { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 27.25);
-      tl.fromTo("#s09-title .sc", { opacity: 0, y: 70, rotation: 8 }, { opacity: 1, y: 0, rotation: 0, duration: 0.3, ease: "expo.out", stagger: 0.07 }, 27.3);
       tl.fromTo("#vw-s10", { scale: 1.0 }, { scale: 1.045, duration: 2.0, ease: "none" }, 29.2);
-      tl.fromTo("#s10-ch", { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 29.25);
-      tl.fromTo("#s10-title .sc", { opacity: 0, y: 70, rotation: 8 }, { opacity: 1, y: 0, rotation: 0, duration: 0.3, ease: "expo.out", stagger: 0.07 }, 29.3);
       tl.fromTo("#vw-s11", { scale: 1.0 }, { scale: 1.045, duration: 2.2, ease: "none" }, 31.2);
-      tl.fromTo("#s11-ch", { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.3, ease: "power3.out" }, 31.25);
-      tl.fromTo("#s11-title .sc", { opacity: 0, y: 70, rotation: 8 }, { opacity: 1, y: 0, rotation: 0, duration: 0.3, ease: "expo.out", stagger: 0.07 }, 31.3);
-      tl.fromTo("#s11-sub .ch", { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: 0.06 }, 31.8);
       tl.fromTo("#vw-s12", { scale: 1.0 }, { scale: 1.045, duration: 2.4, ease: "none" }, 33.4);
-      tl.fromTo("#s12-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 33.48);
-      tl.fromTo("#s12-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 33.85);
-      tl.fromTo("#s12-q .ch, #s12-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.038461538461538464 }, 33.699999999999996);
-      tl.fromTo("#s12-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 34.15);
       tl.fromTo("#vw-s130", { scale: 1.0 }, { scale: 1.045, duration: 1.8, ease: "none" }, 35.8);
-      tl.fromTo("#s130-flash", { opacity: 0 }, { opacity: 0, duration: 0.35, ease: "power2.out" }, 35.8);
-      tl.fromTo("#s130-big", { scale: 1.35, opacity: 0, filter: "blur(18px)" }, { scale: 1, opacity: 0.92, filter: "blur(0px)", duration: 0.38, ease: "expo.out" }, 35.82);
-      tl.fromTo("#s130-big", { y: 0 }, { y: -24, duration: 1.8, ease: "none" }, 35.8);
-      tl.fromTo("#s130-small", { opacity: 0, letterSpacing: "0.9em" }, { opacity: 1, letterSpacing: "0.5em", duration: 0.5, ease: "power3.out" }, 35.919999999999995);
       tl.fromTo("#vw-s131", { scale: 1.0 }, { scale: 1.045, duration: 1.8, ease: "none" }, 37.6);
-      tl.fromTo("#s131-flash", { opacity: 0.55 }, { opacity: 0, duration: 0.35, ease: "power2.out" }, 37.6);
-      tl.fromTo("#s131-big", { scale: 1.35, opacity: 0, filter: "blur(18px)" }, { scale: 1, opacity: 0.92, filter: "blur(0px)", duration: 0.38, ease: "expo.out" }, 37.620000000000005);
-      tl.fromTo("#s131-big", { y: 0 }, { y: -24, duration: 1.8, ease: "none" }, 37.6);
-      tl.fromTo("#s131-small", { opacity: 0, letterSpacing: "0.9em" }, { opacity: 1, letterSpacing: "0.5em", duration: 0.5, ease: "power3.out" }, 37.72);
       tl.fromTo("#vw-s132", { scale: 1.0 }, { scale: 1.045, duration: 1.8, ease: "none" }, 39.4);
-      tl.fromTo("#s132-flash", { opacity: 0.55 }, { opacity: 0, duration: 0.35, ease: "power2.out" }, 39.4);
-      tl.fromTo("#s132-big", { scale: 1.35, opacity: 0, filter: "blur(18px)" }, { scale: 1, opacity: 0.92, filter: "blur(0px)", duration: 0.38, ease: "expo.out" }, 39.42);
-      tl.fromTo("#s132-big", { y: 0 }, { y: -24, duration: 1.8, ease: "none" }, 39.4);
-      tl.fromTo("#s132-small", { opacity: 0, letterSpacing: "0.9em" }, { opacity: 1, letterSpacing: "0.5em", duration: 0.5, ease: "power3.out" }, 39.519999999999996);
       tl.fromTo("#vw-s133", { scale: 1.0 }, { scale: 1.045, duration: 1.8, ease: "none" }, 41.2);
-      tl.fromTo("#s133-flash", { opacity: 0.55 }, { opacity: 0, duration: 0.35, ease: "power2.out" }, 41.2);
-      tl.fromTo("#s133-big", { scale: 1.35, opacity: 0, filter: "blur(18px)" }, { scale: 1, opacity: 0.92, filter: "blur(0px)", duration: 0.38, ease: "expo.out" }, 41.220000000000006);
-      tl.fromTo("#s133-big", { y: 0 }, { y: -24, duration: 1.8, ease: "none" }, 41.2);
-      tl.fromTo("#s133-small", { opacity: 0, letterSpacing: "0.9em" }, { opacity: 1, letterSpacing: "0.5em", duration: 0.5, ease: "power3.out" }, 41.32);
       tl.fromTo("#vw-s134", { scale: 1.0 }, { scale: 1.045, duration: 1.8, ease: "none" }, 43.0);
-      tl.fromTo("#s134-flash", { opacity: 0.55 }, { opacity: 0, duration: 0.35, ease: "power2.out" }, 43.0);
-      tl.fromTo("#s134-big", { scale: 1.35, opacity: 0, filter: "blur(18px)" }, { scale: 1, opacity: 0.92, filter: "blur(0px)", duration: 0.38, ease: "expo.out" }, 43.02);
-      tl.fromTo("#s134-big", { y: 0 }, { y: -24, duration: 1.8, ease: "none" }, 43.0);
-      tl.fromTo("#s134-small", { opacity: 0, letterSpacing: "0.9em" }, { opacity: 1, letterSpacing: "0.5em", duration: 0.5, ease: "power3.out" }, 43.12);
-      tl.fromTo("#s13-leadtxt .ch", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: "power4.out", stagger: 0.035 }, 35.849999999999994);
-      tl.to("#s13-leadtxt", { opacity: 0, duration: 0.25 }, 37.099999999999994);
       tl.fromTo("#vw-s14", { scale: 1.0 }, { scale: 1.045, duration: 2.6, ease: "none" }, 44.8);
-      tl.fromTo("#s14-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 44.879999999999995);
-      tl.fromTo("#s14-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 45.25);
-      tl.fromTo("#s14-q .ch, #s14-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.038461538461538464 }, 45.099999999999994);
-      tl.fromTo("#s14-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 45.55);
       tl.fromTo("#vw-s15", { scale: 1.0 }, { scale: 1.045, duration: 2.8, ease: "none" }, 47.4);
-      tl.fromTo("#s15-name", { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.55, ease: "power3.out" }, 47.48);
-      tl.fromTo("#s15-seal", { scale: 1.6, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.32, ease: "back.out(2.2)" }, 47.85);
-      tl.fromTo("#s15-q .ch, #s15-q .qm", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out", stagger: 0.041666666666666664 }, 47.699999999999996);
-      tl.fromTo("#s15-attr", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, 48.15);
       tl.fromTo("#vw-s16", { scale: 1.0 }, { scale: 1.045, duration: 7.0, ease: "none" }, 50.2);
-      tl.fromTo("#s16-veil", { opacity: 0 }, { opacity: 1, duration: 1.4, ease: "power1.inOut" }, 50.800000000000004);
-      tl.fromTo("#s16-title .sc", { opacity: 0, y: 90, filter: "blur(14px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "expo.out", stagger: 0.16 }, 51.2);
-      tl.fromTo("#s16-seal", { scale: 1.8, opacity: 0, rotation: -14 }, { scale: 1, opacity: 1, rotation: -4, duration: 0.35, ease: "back.out(2.4)" }, 51.95);
-      tl.fromTo("#s16-sub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 52.2);
-      tl.fromTo("#s16-cta", { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.8)" }, 53.5);
-      tl.fromTo("#s16-cta", { y: 0 }, { y: -8, duration: 0.6, yoyo: true, repeat: 3, ease: "sine.inOut" }, 54.1);
       tl.fromTo("#fade", { opacity: 1 }, { opacity: 0, duration: 0.25, ease: "power1.out" }, 0);
       tl.to("#fade", { opacity: 1, duration: 0.5, ease: "power1.in" }, 56.7);
       tl.fromTo("#grain", { backgroundPosition: "0px 0px" }, { backgroundPosition: "25382px 36358px", duration: 57.2, ease: "steps(686)" }, 0);
