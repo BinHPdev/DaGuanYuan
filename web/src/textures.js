@@ -114,34 +114,106 @@ export function brickTexture(base = '#8d8f8c') {
 
 const FONT = '"Kaiti SC","STKaiti","KaiTi","Songti SC","Noto Serif SC","Noto Serif CJK SC",serif';
 
-// Horizontal plaque (匾额), written left-to-right so modern readers are not misled.
-export function plaqueTexture(text, { bg = '#1d2b3a', fg = '#d8b25a' } = {}) {
-  const chars = [...text];
-  const n = chars.length;
-  const [c, g] = canvas(140 * n + 60, 190);
-  g.fillStyle = '#6b3a1e'; g.fillRect(0, 0, c.width, c.height);
-  g.fillStyle = fg; g.fillRect(8, 8, c.width - 16, c.height - 16);
-  g.fillStyle = bg; g.fillRect(16, 16, c.width - 32, c.height - 32);
-  g.fillStyle = fg; g.font = `bold 118px ${FONT}`;
+// 匾额 styles, after the 87 版 garden: 'lacquer' 黑漆金字 (怡红院), 'wood' 本色木地绿字 (潇湘馆),
+// 'cartouche' 卷书额 with rolled ends (沁芳亭). Characters run right-to-left as on the real boards.
+const PLAQUE = {
+  lacquer: { bg: '#1b1814', fg: '#d6ad55', frame: '#2b2119', line: '#a8823e' },
+  wood: { bg: '#b9a074', fg: '#3e6b4c', frame: '#7d6440', line: '#5e4a2e' },
+  cartouche: { bg: '#1d1915', fg: '#d6ad55', frame: '#2b2119', line: '#b8913f' },
+};
+function grain(g, x, y, w, h, base, k = 0.08) {
+  g.fillStyle = base; g.fillRect(x, y, w, h);
+  for (let i = 0; i < h; i += 3) {
+    g.fillStyle = `rgba(${Math.random() < 0.5 ? '0,0,0' : '255,255,255'},${(Math.random() * k).toFixed(3)})`;
+    g.fillRect(x, y + i, w, 1 + Math.random() * 2);
+  }
+}
+export function plaqueTexture(text, { style = 'lacquer', bg, fg, frame, line, rtl = true } = {}) {
+  const P = { ...PLAQUE[style] || PLAQUE.lacquer };
+  if (bg) P.bg = bg; if (fg) P.fg = fg; if (frame) P.frame = frame; if (line) P.line = line;
+  const chars = [...text], n = chars.length;
+  const cw = 150, H = 200, ends = style === 'cartouche' ? 70 : 0, pad = 34;
+  const [c, g] = canvas(cw * n + pad * 2 + ends * 2, H);
+  const W = c.width;
+  g.clearRect(0, 0, W, H);
+  const body = new Path2D();
+  if (style === 'cartouche') {
+    // scroll-book outline: a long cushion whose two ends curl back on themselves
+    body.moveTo(ends, 10); body.lineTo(W - ends, 10);
+    body.bezierCurveTo(W - 8, 6, W - 4, H / 2 - 30, W - 30, H / 2);
+    body.bezierCurveTo(W - 4, H / 2 + 30, W - 8, H - 6, W - ends, H - 10);
+    body.lineTo(ends, H - 10);
+    body.bezierCurveTo(8, H - 6, 4, H / 2 + 30, 30, H / 2);
+    body.bezierCurveTo(4, H / 2 - 30, 8, 6, ends, 10);
+    body.closePath();
+    g.save(); g.clip(body); grain(g, 0, 0, W, H, P.frame, 0.06); g.restore();
+    g.save(); g.translate(W / 2, H / 2); g.scale((W - 40) / W, (H - 40) / H); g.translate(-W / 2, -H / 2);
+    g.clip(body); grain(g, 0, 0, W, H, P.bg, 0.05); g.restore();
+    g.strokeStyle = P.line; g.lineWidth = 4;
+    g.save(); g.translate(W / 2, H / 2); g.scale((W - 26) / W, (H - 26) / H); g.translate(-W / 2, -H / 2); g.stroke(body); g.restore();
+    for (const sx of [1, -1]) { // the rolled ends
+      g.beginPath(); g.arc(sx > 0 ? W - 44 : 44, H / 2, 16, 0, Math.PI * 2); g.stroke();
+      g.beginPath(); g.arc(sx > 0 ? W - 44 : 44, H / 2, 7, 0, Math.PI * 2); g.stroke();
+    }
+  } else {
+    grain(g, 0, 0, W, H, P.frame, 0.07);
+    grain(g, 14, 14, W - 28, H - 28, P.bg, style === 'wood' ? 0.12 : 0.05);
+    g.strokeStyle = P.line; g.lineWidth = 3; g.strokeRect(20, 20, W - 40, H - 40);
+  }
+  g.font = `bold 132px ${FONT}`;
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  chars.forEach((ch, i) => g.fillText(ch, 30 + 140 * i + 70, 100));
+  chars.forEach((ch, i) => {
+    const x = pad + ends + cw * (rtl ? n - 1 - i : i) + cw / 2;
+    g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillText(ch, x + 3, H / 2 + 7); // carved shadow
+    g.fillStyle = P.fg; g.fillText(ch, x, H / 2 + 4);
+  });
+  const t = tex(c, false);
+  t.userData = { aspect: W / H, alpha: style === 'cartouche' };
+  return t;
+}
+
+// Vertical couplet board (楹联).
+export function coupletTexture(text, { style = 'lacquer', bg, fg, border } = {}) {
+  const P = PLAQUE[style] || PLAQUE.lacquer;
+  bg ??= P.bg; fg ??= P.fg; border ??= P.line;
+  const chars = [...text];
+  const [c, g] = canvas(110, 104 * chars.length + 40);
+  grain(g, 0, 0, c.width, c.height, bg, style === 'wood' ? 0.12 : 0.05);
+  g.strokeStyle = border; g.lineWidth = 3; g.strokeRect(7, 7, c.width - 14, c.height - 14);
+  g.font = `bold 84px ${FONT}`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  chars.forEach((ch, i) => {
+    g.fillStyle = 'rgba(0,0,0,0.4)'; g.fillText(ch, 57, 20 + 104 * i + 56);
+    g.fillStyle = fg; g.fillText(ch, 55, 20 + 104 * i + 52);
+  });
   const t = tex(c, false);
   t.userData = { aspect: c.width / c.height };
   return t;
 }
 
-// Vertical couplet board (楹联).
-export function coupletTexture(text, { bg = '#20160f', fg = '#d8b25a', border = '#b38b45' } = {}) {
-  const chars = [...text];
-  const [c, g] = canvas(110, 104 * chars.length + 40);
-  g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height);
-  g.strokeStyle = border; g.lineWidth = 6; g.strokeRect(6, 6, c.width - 12, c.height - 12);
-  g.fillStyle = fg; g.font = `bold 84px ${FONT}`;
-  g.textAlign = 'center'; g.textBaseline = 'middle';
-  chars.forEach((ch, i) => g.fillText(ch, 55, 20 + 104 * i + 52));
-  const t = tex(c, false);
-  t.userData = { aspect: c.width / c.height };
-  return t;
+// 萝薜: one hanging strand of 薜荔/女萝 — a wandering stem with small oval leaves, alpha-cut.
+export function vineStrandTexture() {
+  const [c, g] = canvas(96, 384);
+  g.clearRect(0, 0, 96, 384);
+  let x = 48;
+  const pts = [];
+  for (let y = 0; y <= 384; y += 8) { x += (Math.random() - 0.5) * 5; x = Math.max(34, Math.min(62, x)); pts.push([x, y]); }
+  g.strokeStyle = '#4a4026'; g.lineWidth = 2.2; g.beginPath(); pts.forEach(([px, py], i) => (i ? g.lineTo(px, py) : g.moveTo(px, py))); g.stroke();
+  pts.forEach(([px, py], i) => {
+    if (i % 1 !== 0) return;
+    const k = 1 - py / 384 * 0.55; // leaves get smaller towards the tip
+    for (const sd of [-1, 1]) {
+      if (Math.random() < 0.25) continue;
+      const a = sd * (0.6 + Math.random() * 0.7), len = (13 + Math.random() * 8) * k, wid = len * 0.55;
+      g.save(); g.translate(px + sd * 2, py + Math.random() * 4); g.rotate(a);
+      const hue = 95 + Math.random() * 30, light = 22 + Math.random() * 16;
+      g.fillStyle = Math.random() < 0.06 ? `hsl(${18 + Math.random() * 20},55%,38%)` : `hsl(${hue},${40 + Math.random() * 20}%,${light}%)`;
+      g.beginPath(); g.ellipse(0, len / 2, wid / 2, len / 2, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(255,255,230,0.18)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, 1); g.lineTo(0, len - 2); g.stroke();
+      g.restore();
+    }
+  });
+  return tex(c, false);
 }
 
 // Leaf cards with alpha.

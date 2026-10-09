@@ -295,29 +295,56 @@ B.liaoting = (p, g) => {
   sh.holes.push(hole);
   const tg = new THREE.ExtrudeGeometry(sh, { depth: 9, bevelEnabled: true, bevelThickness: 0.8, bevelSize: 0.8, bevelSegments: 2, curveSegments: 16 });
   tg.translate(0, 0, -4.5);
-  const rockMat = new THREE.MeshStandardMaterial({ color: '#a7a397', roughness: 0.95, map: T.pavingTexture('#9d998e') });
+  // the core wears the same weathered-stone shader as the 太湖石, a shade darker and damp
+  const coreCol = new THREE.Color('#8e8b80'), cc = new Float32Array(tg.attributes.position.count * 3);
+  for (let i = 0; i < cc.length; i += 3) { cc[i] = coreCol.r; cc[i + 1] = coreCol.g; cc[i + 2] = coreCol.b; }
+  tg.setAttribute('color', new THREE.BufferAttribute(cc, 3));
+  const rk = rockMaterial(), rockMat = rk.clone();
+  rockMat.onBeforeCompile = rk.onBeforeCompile; rockMat.customProgramCacheKey = rk.customProgramCacheKey;
+  rockMat.color.set('#a6a397');
   tunnel.add(new THREE.Mesh(tg, rockMat));
-  // craggy rocks piled over and around the mouths
-  for (let i = 0; i < 22; i++) {
-    const r = taihuRock(1.1 + Math.random() * 1.2, i + 11, { tall: 0.8 });
-    const side = i % 2 ? 1 : -1;
-    r.position.set((Math.random() - 0.5) * 16, 4.5 + Math.random() * 2.5, side * (3 + Math.random() * 2.5));
-    tunnel.add(r);
+  // craggy stones along both faces break the slab into a rock mass; the arch lip stays open
+  const lipY = (x) => 0.6 + Math.sqrt(Math.max(0, 3.6 * 3.6 - x * x));
+  let seed = 31;
+  for (const side of [-1, 1]) {
+    for (let x = -8.2; x <= 8.2; x += 1.45) {
+      if (side < 0 && Math.abs(x) < 2.2) continue; // leave the 匾灯 clear
+      const top = 4.6 + Math.sin(((8 - x) / 16) * Math.PI) * 1.4;
+      const s = 1.2 + Math.random() * 0.9;
+      const y = Math.abs(x) < 4.2 ? Math.max(lipY(x) + s * 0.25, top - s * 1.1) : -1.6 + Math.random() * (top - 0.6);
+      const r = taihuRock(s, seed++, { tall: 0.9 + Math.random() * 0.5, mat: rockMat });
+      r.position.set(x + (Math.random() - 0.5) * 0.5, y, side * (5.0 + Math.random() * 0.6)); r.rotation.y = Math.random() * 6.28; tunnel.add(r);
+      if (Math.abs(x) >= 4.4) { // second course down the flanks
+        const r2 = taihuRock(1.3 + Math.random() * 0.8, seed++, { tall: 1.1, mat: rockMat });
+        r2.position.set(x + (Math.random() - 0.5) * 0.8, top - 1.2 - Math.random(), side * (4.6 + Math.random() * 0.5)); tunnel.add(r2);
+      }
+    }
   }
-  // 萝薜倒垂: vine curtains hanging over both mouths
-  const vineMat = new THREE.MeshStandardMaterial({ map: T.leafTexture('willow'), alphaTest: 0.4, side: THREE.DoubleSide, color: '#6f9a4a' });
-  for (const side of [-1, 1]) for (let i = 0; i < 9; i++) {
-    const v = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 2.6 + Math.random()), vineMat);
-    v.position.set(-4.2 + i * 1.05, 4.3 - 1.3, side * 5.4); v.userData.keepSeparate = true; tunnel.add(v);
+  for (let i = 0; i < 7; i++) { // 峰石 on the crown for a ragged skyline
+    const r = taihuRock(1.1 + Math.random() * 0.8, seed++, { tall: 1.15 + Math.random() * 0.4, mat: rockMat });
+    r.position.set(-6 + i * 2 + (Math.random() - 0.5), 5.0 + Math.random() * 0.5, (Math.random() - 0.5) * 6); tunnel.add(r);
   }
-  // 匾灯 '蓼汀花溆' over the upstream mouth (元妃舟入石港所见)
-  const pl = A.addPlaque(tunnel, p.plaque, { y: 5.2, z: -5.5, width: 3.6 }); pl.rotation.y = Math.PI;
+  // 萝薜倒垂: strands of 薜荔 of uneven length hanging over both lips, longest at the shoulders
+  const vineMat = new THREE.MeshStandardMaterial({ map: T.vineStrandTexture(), alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.85 });
+  const strand = new THREE.PlaneGeometry(1, 1); strand.translate(0, -0.5, 0);
+  for (const side of [-1, 1]) for (let i = 0; i < 46; i++) {
+    const x = -4.4 + Math.random() * 8.8, shoulder = Math.min(1, Math.abs(x) / 3.6);
+    const len = 0.8 + Math.random() * 1.4 + shoulder * 1.8, wd = 0.35 + Math.random() * 0.3;
+    const v = new THREE.Mesh(strand, vineMat);
+    v.scale.set(wd, len, 1);
+    v.position.set(x, lipY(Math.min(Math.abs(x), 3.55)) + 0.35 + Math.random() * 0.4, side * (5.25 + Math.random() * 0.5));
+    v.rotation.y = (Math.random() - 0.5) * 0.9; v.rotation.z = (Math.random() - 0.5) * 0.12;
+    v.userData.keepSeparate = true; tunnel.add(v);
+  }
+  // 匾灯 '蓼汀花溆' over the upstream mouth (元妃舟入石港所见): a small lit board set into the rock
+  const pl = A.addPlaque(tunnel, p.plaque, { y: 4.95, z: -5.75, height: 0.62, lamp: true, tilt: 0.05 }); pl.rotation.y = Math.PI;
   g.add(tunnel);
   flora.push({ type: 'vines', x: p.x, z: p.z, n: 40, r: 7, onTop: 6 });
   // 两行垂柳，杂着桃杏
-  flora.push({ type: 'willow', pts: L.water.streams[1].pts.slice(1, 5), n: 16, off: 6 });
-  flora.push({ type: 'peach', pts: L.water.streams[1].pts.slice(1, 5), n: 12, off: 9 });
-  flora.push({ type: 'apricot', pts: L.water.streams[1].pts.slice(2, 5), n: 8, off: 11 });
+  // (kept clear of the two mouths so the grotto reads from the water)
+  flora.push({ type: 'willow', pts: L.water.streams[1].pts.slice(1, 5), n: 16, off: 6, clear: true });
+  flora.push({ type: 'peach', pts: L.water.streams[1].pts.slice(1, 5), n: 12, off: 9, clear: true });
+  flora.push({ type: 'apricot', pts: L.water.streams[1].pts.slice(2, 5), n: 8, off: 11, clear: true });
   flora.push({ type: 'petals', pts: L.water.streams[1].pts.slice(1, 5), n: 400, off: 2.5 });
   label(p, 11);
 };
@@ -437,10 +464,11 @@ B.yihong = (p, g) => {
   g.add(A.corridor([[2.4, d / 2 - 1.5], [w / 2 - 2, d / 2 - 1.5], [w / 2 - 2, -2]]));
   // main hall with 抱厦
   const yard = A.pavement(w - 6, 12, MAT.paving); yard.position.z = 6; g.add(yard);
-  const main = A.hall({ w: 17, d: 8, h: 3.8, bays: 5, roofType: 'xieshan', plaque: p.plaque, lanterns: 'palace', paint: 'su', lattice: 'guibei' });
+  const main = A.hall({ w: 17, d: 8, h: 3.8, bays: 5, roofType: 'xieshan', lanterns: 'palace', paint: 'su', lattice: 'guibei' });
   furnish('yihong', main, { w: 17, d: 8, h: 3.8, platform: 0.6 });
   main.position.z = -6; g.add(collide(main));
-  const baosha = A.hall({ w: 7, d: 3.4, h: 3.3, bays: 3, roofType: 'juanpeng', frontOpen: true, backWall: false, sideWalls: false, platform: 0.6, lanterns: false, paint: 'su' });
+  // the 抱厦 is the facade one sees, so the '怡紅快綠' board hangs on its 额枋
+  const baosha = A.hall({ w: 7, d: 3.4, h: 3.3, bays: 3, roofType: 'juanpeng', frontOpen: true, backWall: false, sideWalls: false, platform: 0.6, lanterns: false, paint: 'su', plaque: p.plaque });
   baosha.position.z = -6 + 4 + 1.6; g.add(baosha);
   // 一边种着数本芭蕉，那一边乃是一棵西府海棠
   addFlora(p, 'banana', -5.5, 4, 6, 2.2);

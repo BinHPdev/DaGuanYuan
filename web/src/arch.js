@@ -609,29 +609,47 @@ export function hall({
     if (plaque && bays > 1 && i === Math.floor(bays / 2)) continue; // keep the plaque clear
     const l = lantern(lanterns); l.position.set(-w / 2 + (i + 0.5) * bw, beamY - bh / 2 - 0.75, D / 2 + 0.6); g.add(l);
   }
-  if (plaque) addPlaque(g, plaque, { y: beamY - bh / 2 - 0.62, z: D / 2 + 0.25, width: Math.min(bw * 0.95, 0.75 * [...plaque].length + 0.6), ...plaqueOpts });
-  if (couplet) addCouplet(g, couplet, { y: y0, h: wh, x: bw / 2 * (bays > 1 ? 1 : 0.6), z: D / 2 + colR + 0.04 });
+  if (plaque) { // on the 额枋, as tall as the beam stack, overlapping the 楣子 a little
+    const stack = top - (beamY - bh / 2), ph = Math.min(1.05, Math.max(0.6, stack + 0.1));
+    addPlaque(g, plaque, { y: top - stack / 2 - 0.08, z: D / 2 + 0.24, height: ph, width: bw * 0.7, style: tone === 'green' || colMat === MAT.columnGreen ? 'wood' : 'lacquer', ...plaqueOpts });
+  }
+  if (couplet) addCouplet(g, couplet, { y: y0, h: wh, x: bw / 2 * (bays > 1 ? 1 : 0.6), z: D / 2 + colR + 0.04, style: tone === 'green' || colMat === MAT.columnGreen ? 'wood' : 'lacquer' });
   g.userData.top = top + dgH + rH;
   return g;
 }
 
-export function addPlaque(g, text, { y, z, width = 2.4, x = 0, ...o }) {
+// 匾额: a board with a little thickness, leaning forward at the top as real plaques hang.
+// Size it by `height` (a hall's plaque is about as tall as the beam stack it sits on); `width` caps it.
+// lamp: an unlit, self-glowing 匾灯 (蓼汀花溆) instead of a lit board.
+export function addPlaque(g, text, { y, z, height, width, x = 0, lamp = false, tilt = 0.1, ...o }) {
   const t = T.plaqueTexture(text, o);
-  const ht = width / t.userData.aspect;
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(width, ht), new THREE.MeshBasicMaterial({ map: t, toneMapped: false }));
-  m.position.set(x, y, z);
+  const asp = t.userData.aspect;
+  let ht = height ?? (width ? width / asp : 0.7), wd = ht * asp;
+  if (width && wd > width) { wd = width; ht = wd / asp; }
+  const face = lamp
+    ? new THREE.MeshBasicMaterial({ map: t, toneMapped: false, alphaTest: t.userData.alpha ? 0.5 : 0, side: THREE.DoubleSide })
+    : new THREE.MeshStandardMaterial({ map: t, roughness: 0.55, metalness: 0.05, alphaTest: t.userData.alpha ? 0.5 : 0 });
+  const grp = new THREE.Group(), lean = new THREE.Group(); // callers may yaw grp; the lean stays local
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(wd, ht), face);
+  m.position.z = 0.04;
   m.userData.keepSeparate = true;
-  g.add(m);
-  return m;
+  lean.add(m);
+  if (!t.userData.alpha) { const back = at(box(wd * 0.98, ht * 0.96, 0.07, MAT.beamPlain), 0, 0, 0); back.userData.keepSeparate = true; lean.add(back); }
+  lean.rotation.x = -tilt;
+  grp.add(lean);
+  grp.position.set(x, y, z);
+  grp.userData.plaqueSize = [wd, ht];
+  g.add(grp);
+  return grp;
 }
 
-export function addCouplet(g, [left, right], { y, h, x, z }) {
+export function addCouplet(g, [left, right], { y, h, x, z, style }) {
   // Right-hand board (上联) is read first and hangs on the viewer's right.
   [[right, -x], [left, x]].forEach(([text, xx], i) => {
-    const t = T.coupletTexture(i === 0 ? left : right);
-    const ht = h * 0.78, wd = ht * t.userData.aspect;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(wd, ht), new THREE.MeshBasicMaterial({ map: t, toneMapped: false }));
-    m.position.set(i === 0 ? x : -x, y + h * 0.48, z);
+    const t = T.coupletTexture(i === 0 ? left : right, { style });
+    const ht = h * 0.74, wd = Math.min(0.3, ht * t.userData.aspect);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(wd, ht), new THREE.MeshStandardMaterial({ map: t, roughness: 0.6 }));
+    m.position.set(i === 0 ? x : -x, y + h * 0.47, z);
     m.userData.keepSeparate = true;
     g.add(m);
   });
@@ -660,7 +678,7 @@ export function lou({ w = 14, d = 8, h1 = 3.8, h2 = 3.4, bays = 5, roofType = 'x
 }
 
 // Pavilion (亭): n-sided cuanjian, or 4-sided xieshan when n === 'x'.
-export function pavilion({ n = 4, r = 2.6, h = 3.2, platform = 0.5, roofMat = MAT.tile, colMat = MAT.column, plaque, seat = true } = {}) {
+export function pavilion({ n = 4, r = 2.6, h = 3.2, platform = 0.5, roofMat = MAT.tile, colMat = MAT.column, plaque, plaqueOpts, seat = true } = {}) {
   const g = new THREE.Group();
   const sides = n;
   const plat = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.6, r + 0.7, platform, sides, 1), MAT.stone);
@@ -685,7 +703,7 @@ export function pavilion({ n = 4, r = 2.6, h = 3.2, platform = 0.5, roofMat = MA
   rr.rotation.y = 0;
   rr.position.y = platform + h;
   g.add(rr);
-  if (plaque) addPlaque(g, plaque, { y: platform + h - 0.62, z: r * Math.cos(Math.PI / sides) + 0.12, width: 0.7 * [...plaque].length + 0.5 });
+  if (plaque) addPlaque(g, plaque, { y: platform + h - 0.62, z: r * Math.cos(Math.PI / sides) + 0.12, height: 0.6, width: r * 1.2, style: 'cartouche', ...plaqueOpts });
   g.userData.top = platform + h + r * 0.62 + 0.7;
   return g;
 }
@@ -749,7 +767,7 @@ export function gateHouse({ w = 3.6, d = 2.6, h = 3.4, plaque, roofMat = MAT.til
   for (const x of [-w / 2 + 0.35, w / 2 - 0.35]) g.add(at(cyl(0.12, 0.5, MAT.gold, 8), x, h - 0.6, d / 2 + 0.05)); // 垂柱
   const r = roof(w + 2, d + 2, 1.5, 'juanpeng', roofMat, { overhang: 1, gableMat: MAT.brick });
   r.position.y = h; g.add(r);
-  if (plaque) addPlaque(g, plaque, { y: h - 0.7, z: d / 2 + 0.15, width: Math.min(w - 0.4, 0.62 * [...plaque].length + 0.4) });
+  if (plaque) addPlaque(g, plaque, { y: h - 0.42, z: d / 2 + 0.2, height: 0.56, width: w * 0.62, style: colMat === MAT.columnGreen ? 'wood' : 'lacquer' });
   // door frame, two leaves standing open with 门钉, four 门簪 on the lintel, 抱鼓石 at the jambs
   const dw = Math.min(w - 0.6, 2.4), dh = h - 1.0, leafMat = colMat === MAT.columnGreen ? MAT.frameGreen : MAT.frameRed;
   g.add(at(box(dw + 0.3, 0.22, 0.3, leafMat), 0, dh + 0.11, 0)); // 中槛
